@@ -1,0 +1,221 @@
+.header-anchor-pane {
+    -fx-background-color: linear-gradient(from 100% 100% to 0% 0%, #58126a, #f6b2e1);
+}
+
+.search-hbox {
+    -fx-border-radius: 15px;
+    -fx-background-radius: 15px;
+    -fx-background-color: white;
+}
+
+.search-text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-font-size: 16px;
+}
+
+.custom-calendar-btn {
+    -fx-background-color: transparent;
+    -fx-border-width: 0px 1px 0px 1px;
+    -fx-border-color: black;
+    -fx-font-size: 14px;
+}
+
+.custom-calendar-btn:pressed {
+    -fx-background-color: transparent;
+    -fx-border-width: 0px 1px 0px 1px;
+    -fx-border-color: blue;
+}
+
+.custom-calendar {
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-background-color: rgba(255,255,255,0.8);
+}
+
+.root-grid-pane {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+}
+
+.root-grid-pane:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.3), 15, 0, 0, 4);
+}
+
+.number-of-guests {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0px;
+    -fx-font-size: 14px;
+}
+
+.guest-counter {
+    -fx-background-color: lightgray;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+}
+
+.minus-or-plus-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.search-button {
+    -fx-background-color: #b40acf;
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-padding: 7px;
+    -fx-font-weight: bold;
+}
+
+.search-button:pressed  {
+    -fx-background-color: #c334d9;
+    -fx-effect: none;
+}
+
+.search-button:focused  {
+    -fx-effect: none;
+}
+
+.custom-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.custom-button-double {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0px;
+    -fx-font-size: 10px;
+}
+
+.custom-directions-label {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.popular-destinations-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: black;
+}
+
+.hotel-name-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: black;
+}
+
+.hotel-rating-hbox {
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+    -fx-border-color: transparent;
+    -fx-background-color: rgba(170,170,170,0.6);
+}
+
+.hotel-rating-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: white;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+    -fx-font-weight: bold;
+}
+
+.hotel-count-rating-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: rgba(60,60,60);
+}
+
+.room-small-price {
+    -fx-text-fill: #b40acf;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.room-actual-price {
+    -fx-strikethrough: true;
+    -fx-fill: #969696;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.select-button {
+    -fx-background-color: rgba(230,230,230);
+    -fx-border-color: transparent;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-text-fill: #b40acf;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.select-button:hover {
+    -fx-background-color: rgba(180,180,180);
+}
+
+.list-view {
+    -fx-background-insets: 0;
+    -fx-background-color: transparent;
+}
+
+.list-view .scroll-bar:vertical,
+.list-view .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+}
+
+.sort-button-hbox {
+    -fx-background-color: white;
+    -fx-border-color: transparent;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+
+.sort-button-hbox:hover {
+    -fx-background-color: rgba(230, 230, 230);
+}
+
+.filter-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.feature-label {
+    -fx-background-color: rgba(200,200,200, 0.8);
+    -fx-text-fill: rgba(100,100,100);
+    -fx-border-color: transparent;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-font-size: 10px;
+    -fx-padding: 2px 10px;
+}
+
+.scroll-button {
+    -fx-background-color: rgba(255,255,255,0.5);
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
+}
+
+.back-button {
+    -fx-background-color: #b40acf;
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-background-radius: 30px;
+    -fx-border-radius: 30px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.3), 15, 0, 0, 4);
+}
+
+.back-button:hover {
+    -fx-background-color: #c334d9;
+}
