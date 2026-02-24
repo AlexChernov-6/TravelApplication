@@ -1,172 +1,104 @@
 package com.example.travel.controllers;
 
-import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Button;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.stage.Popup;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 
 public class CustomCalendar extends Button {
-    private static final double gridPaneWidth = 400;
-    private static final double gridPaneHeight = 300;
-    private static final double gridPaneFirstRowHeight = 60;
+    private static final double GRID_PANE_WIDTH = 400;
+    private static final double GRID_PANE_HEIGHT = 300;
+    private static final double GRID_PANE_FIRST_ROW_HEIGHT = 60;
 
-    // Текущие месяц и год
     private int currentMonth = LocalDate.now().getMonthValue();
     private int currentYear = LocalDate.now().getYear();
 
-    // Единственный экземпляр календаря (singleton)
-    protected static GridPane calendarInstance;
-    protected static boolean isCalendarVisible = false;
+    private final Popup popup;
+    private final GridPane calendarGrid;
+    private Calendar calendarStart;
+    private Calendar calendarEnd;
+    private CustomCalendarBtn startMonthBtn;
+    private CustomCalendarBtn endMonthBtn;
 
-    // Обработчик для закрытия по клику вне календаря
-    private final EventHandler<MouseEvent> clickOutsideHandler;
-    private final StackPane parentStackPane;
-
-    public CustomCalendar(StackPane stackPane) {
-        this.parentStackPane = stackPane;
-        Platform.runLater(() -> setText("Даты"));
+    public CustomCalendar() {
+        setText("Даты");
         getStyleClass().add("custom-calendar-btn");
 
-        // Создаём обработчик для закрытия календаря
-        clickOutsideHandler = event -> {
-            if (calendarInstance != null && isCalendarVisible) {
-                // Если клик НЕ по календарю и НЕ по кнопке
-                if (!calendarInstance.getBoundsInParent().contains(event.getX(), event.getY())
-                        && !getBoundsInParent().contains(event.getX(), event.getY())) {
-                    hideCalendar();
-                }
-            }
-        };
+        // Создаём Popup
+        popup = new Popup();
+        popup.setAutoHide(true);
+        popup.setHideOnEscape(true);
+
+        // Создаём содержимое календаря
+        calendarGrid = createCalendarGrid();
+        popup.getContent().add(calendarGrid);
 
         setOnAction(e -> toggleCalendar());
     }
 
-    private void toggleCalendar() {
-        if (!isCalendarVisible) {
-            showCalendar();
-        } else {
-            hideCalendar();
-        }
-    }
-
-    private void showCalendar() {
-        // Если календарь ещё не создан - создаём
-        if (calendarInstance == null) {
-            createCalendarInstance();
-        }
-
-        // Обновляем данные календаря
-        updateCalendarData();
-
-        // Позиционируем календарь под кнопкой
-        setLayout();
-
-        // Добавляем календарь и обработчик клика
-        if (!parentStackPane.getChildren().contains(calendarInstance)) {
-            parentStackPane.getChildren().add(calendarInstance);
-        }
-        parentStackPane.addEventHandler(MouseEvent.MOUSE_CLICKED, clickOutsideHandler);
-
-        calendarInstance.setVisible(true);
-        calendarInstance.toFront(); // Поднимаем на передний план
-        isCalendarVisible = true;
-    }
-
-    private void hideCalendar() {
-        if (calendarInstance != null) {
-            calendarInstance.setVisible(false);
-            parentStackPane.removeEventHandler(MouseEvent.MOUSE_CLICKED, clickOutsideHandler);
-            isCalendarVisible = false;
-        }
-    }
-
-    private void createCalendarInstance() {
-        calendarInstance = new GridPane();
-        calendarInstance.setPrefWidth(gridPaneWidth);
-        calendarInstance.setMaxWidth(gridPaneWidth);
-        calendarInstance.setPrefHeight(gridPaneHeight);
-        calendarInstance.setMaxHeight(gridPaneHeight);
-        calendarInstance.getColumnConstraints().addAll(
-                new ColumnConstraints(gridPaneWidth / 2),
-                new ColumnConstraints(gridPaneWidth / 2)
+    private GridPane createCalendarGrid() {
+        GridPane grid = new GridPane();
+        grid.setPrefWidth(GRID_PANE_WIDTH);
+        grid.setMaxWidth(GRID_PANE_WIDTH);
+        grid.setPrefHeight(GRID_PANE_HEIGHT);
+        grid.setMaxHeight(GRID_PANE_HEIGHT);
+        grid.getColumnConstraints().addAll(
+                new ColumnConstraints(GRID_PANE_WIDTH / 2),
+                new ColumnConstraints(GRID_PANE_WIDTH / 2)
         );
-        calendarInstance.getRowConstraints().addAll(
-                new RowConstraints(gridPaneFirstRowHeight),
-                new RowConstraints(gridPaneHeight - gridPaneFirstRowHeight)
+        grid.getRowConstraints().addAll(
+                new RowConstraints(GRID_PANE_FIRST_ROW_HEIGHT),
+                new RowConstraints(GRID_PANE_HEIGHT - GRID_PANE_FIRST_ROW_HEIGHT)
         );
-        calendarInstance.getStyleClass().add("root-grid-pane");
+        grid.getStyleClass().add("popup");
 
-        // Создаём начальный и конечный календари
-        Calendar calendarStart = new Calendar();
-        Calendar calendarEnd = new Calendar();
-
+        calendarStart = new Calendar();
+        calendarEnd = new Calendar();
         GridPane.setColumnIndex(calendarStart, 0);
         GridPane.setRowIndex(calendarStart, 1);
         GridPane.setColumnIndex(calendarEnd, 1);
         GridPane.setRowIndex(calendarEnd, 1);
 
-        // Кнопки переключения месяцев
-        CustomCalendarBtn customCalendarBtnStartMonth = new CustomCalendarBtn(true, gridPaneFirstRowHeight);
-        GridPane.setColumnIndex(customCalendarBtnStartMonth, 0);
+        startMonthBtn = new CustomCalendarBtn(true, GRID_PANE_FIRST_ROW_HEIGHT);
+        endMonthBtn = new CustomCalendarBtn(false, GRID_PANE_FIRST_ROW_HEIGHT);
+        GridPane.setColumnIndex(startMonthBtn, 0);
+        GridPane.setColumnIndex(endMonthBtn, 1);
+        GridPane.setHalignment(endMonthBtn, HPos.RIGHT);
 
-        CustomCalendarBtn customCalendarBtnEndMonth = new CustomCalendarBtn(false, gridPaneFirstRowHeight);
-        GridPane.setColumnIndex(customCalendarBtnEndMonth, 1);
-        GridPane.setHalignment(customCalendarBtnEndMonth, HPos.RIGHT);
-
-        // Сохраняем ссылки на компоненты для обновления
-        calendarInstance.getProperties().put("calendarStart", calendarStart);
-        calendarInstance.getProperties().put("calendarEnd", calendarEnd);
-        calendarInstance.getProperties().put("startMonthBtn", customCalendarBtnStartMonth);
-        calendarInstance.getProperties().put("endMonthBtn", customCalendarBtnEndMonth);
-
-        // Настраиваем обработчики кнопок месяцев
-        setupMonthButtons(customCalendarBtnStartMonth, customCalendarBtnEndMonth,
-                calendarStart, calendarEnd);
-
-        calendarInstance.getChildren().addAll(
-                customCalendarBtnStartMonth,
-                customCalendarBtnEndMonth,
-                calendarStart,
-                calendarEnd
-        );
-
-        calendarInstance.setManaged(false);
-    }
-
-    private void setupMonthButtons(CustomCalendarBtn startBtn, CustomCalendarBtn endBtn,
-                                   Calendar startCal, Calendar endCal) {
-        startBtn.setOnAction(e -> {
+        // Настраиваем кнопки переключения месяцев
+        startMonthBtn.setOnAction(e -> {
             currentMonth--;
             if (currentMonth < 1) {
                 currentMonth = 12;
                 currentYear--;
             }
-            updateMonthButtons(startBtn, endBtn);
-            updateCalendars(startCal, endCal);
+            updateMonthButtons();
+            updateCalendars();
         });
 
-        endBtn.setOnAction(e -> {
+        endMonthBtn.setOnAction(e -> {
             currentMonth++;
             if (currentMonth > 12) {
                 currentMonth = 1;
                 currentYear++;
             }
-            updateMonthButtons(startBtn, endBtn);
-            updateCalendars(startCal, endCal);
+            updateMonthButtons();
+            updateCalendars();
         });
+
+        grid.getChildren().addAll(startMonthBtn, endMonthBtn, calendarStart, calendarEnd);
+        return grid;
     }
 
-    private void updateMonthButtons(CustomCalendarBtn startBtn, CustomCalendarBtn endBtn) {
-        startBtn.setMonth(currentMonth);
-        startBtn.setYear(currentYear);
-        startBtn.updateLabel();
+    private void updateMonthButtons() {
+        startMonthBtn.setMonth(currentMonth);
+        startMonthBtn.setYear(currentYear);
+        startMonthBtn.updateLabel();
 
         int nextMonth = currentMonth + 1;
         int nextMonthYear = currentYear;
@@ -174,13 +106,13 @@ public class CustomCalendar extends Button {
             nextMonth = 1;
             nextMonthYear++;
         }
-        endBtn.setMonth(nextMonth);
-        endBtn.setYear(nextMonthYear);
-        endBtn.updateLabel();
+        endMonthBtn.setMonth(nextMonth);
+        endMonthBtn.setYear(nextMonthYear);
+        endMonthBtn.updateLabel();
     }
 
-    private void updateCalendars(Calendar startCal, Calendar endCal) {
-        startCal.createCalendar(YearMonth.of(currentYear, currentMonth));
+    private void updateCalendars() {
+        calendarStart.createCalendar(YearMonth.of(currentYear, currentMonth));
 
         int nextMonth = currentMonth + 1;
         int nextMonthYear = currentYear;
@@ -188,37 +120,22 @@ public class CustomCalendar extends Button {
             nextMonth = 1;
             nextMonthYear++;
         }
-        endCal.createCalendar(YearMonth.of(nextMonthYear, nextMonth));
+        calendarEnd.createCalendar(YearMonth.of(nextMonthYear, nextMonth));
     }
 
-    private void updateCalendarData() {
-        if (calendarInstance != null) {
-            Calendar startCal = (Calendar) calendarInstance.getProperties().get("calendarStart");
-            Calendar endCal = (Calendar) calendarInstance.getProperties().get("calendarEnd");
-            CustomCalendarBtn startBtn = (CustomCalendarBtn) calendarInstance.getProperties().get("startMonthBtn");
-            CustomCalendarBtn endBtn = (CustomCalendarBtn) calendarInstance.getProperties().get("endMonthBtn");
+    private void toggleCalendar() {
+        if (popup.isShowing()) {
+            popup.hide();
+        } else {
+            // Обновляем данные перед показом
+            updateMonthButtons();
+            updateCalendars();
 
-            if (startCal != null && endCal != null && startBtn != null && endBtn != null) {
-                updateMonthButtons(startBtn, endBtn);
-                updateCalendars(startCal, endCal);
-            }
+            // Позиционируем под кнопкой
+            Bounds bounds = localToScreen(getBoundsInLocal());
+            double x = bounds.getMinX();
+            double y = bounds.getMaxY() + 5;
+            popup.show(this, x, y);
         }
-    }
-
-    public void setLayout() {
-        // Получаем координаты нижнего края кнопки в системе координат сцены
-        Bounds boundsInScene = localToScene(getBoundsInLocal());
-        double xInScene = boundsInScene.getMinX();
-        double yInScene = boundsInScene.getMaxY() + 5; // небольшой отступ
-
-        // Преобразуем координаты из сцены в координаты StackPane
-        Point2D pointInStackPane = parentStackPane.sceneToLocal(xInScene, yInScene);
-
-        // Устанавливаем позицию И размеры календаря
-        calendarInstance.resizeRelocate(pointInStackPane.getX(), pointInStackPane.getY(), gridPaneWidth, gridPaneHeight);
-
-        // Принудительно применяем CSS и выполняем компоновку
-        calendarInstance.applyCss();
-        calendarInstance.layout();
     }
 }

@@ -215,11 +215,11 @@ public class HotelCell extends ListCell<Hotel> {
 
         nextImageBtn.setGraphic(nextImageIV);
 
-        imagesHotelSP.setOnMouseEntered(event -> {
+        rootGridPane.setOnMouseEntered(event -> {
             updateVisibleButton();
         });
 
-        imagesHotelSP.setOnMouseExited(event -> {
+        rootGridPane.setOnMouseExited(event -> {
             prevImageBtn.setVisible(false);
             nextImageBtn.setVisible(false);
         });

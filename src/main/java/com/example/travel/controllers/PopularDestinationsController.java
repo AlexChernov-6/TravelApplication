@@ -10,6 +10,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -17,9 +18,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -28,7 +31,7 @@ import static com.example.travel.util.HelpFullClass.createLoadHB;
 public class PopularDestinationsController {
 
     // Сохраняем ссылку на StackPane, чтобы календарь был виден поверх всех элементов
-    private static StackPane overlaySP, globalStackPane;
+    private static StackPane overlaySP;
     private static HotelService hotelService = new HotelService();
     private static ListView<Hotel> hotelsLV;
     private static AnchorPane rootAP;
@@ -40,19 +43,23 @@ public class PopularDestinationsController {
     private static ScrollPane rootScrollPane;
     private static ObservableList<Hotel> observableHotels;
     private static FilteredList<Hotel> filteredHotels;
+    private static SortedContext sortedContext = SortedContext.BY_DEFAULT;
+    private static SorterWindow sorterWindow;
+    private static FilterWindow filterWindow;
+
+    public enum SortedContext {
+        BY_DEFAULT,
+        MORE_EXPENSIVE,
+        CHEAPER
+    }
 
     public static StackPane createShapePopularDestinations() {
         overlaySP = new StackPane();
 
         rootAP = new AnchorPane();
 
-        globalStackPane = new StackPane();
-        globalStackPane.getChildren().add(rootAP);
-        StackPane.setAlignment(rootAP, Pos.TOP_LEFT);
-        //globalStackPane.setStyle("-fx-background-color: rgba(255,0,0,0.4);");
-
         rootScrollPane = new ScrollPane();
-        rootScrollPane.setContent(globalStackPane);
+        rootScrollPane.setContent(rootAP);
         rootScrollPane.setFitToWidth(true);
         rootScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
@@ -84,17 +91,17 @@ public class PopularDestinationsController {
                     return hotel.getHotelName().toUpperCase().contains(searchText.toUpperCase());
                 });
                 // Обновляем высоту списка в зависимости от количества отфильтрованных элементов
-                int cellHeight = 220;
+                int cellHeight = 230;
                 hotelsLV.setPrefHeight(filteredHotels.size() * cellHeight);
             }
         });
 
         // Создаём календарь (он теперь будет создан один раз)
-        CustomCalendar calendar = new CustomCalendar(globalStackPane);
+        CustomCalendar calendar = new CustomCalendar();
         calendar.setPrefWidth(150);
         calendar.setPrefHeight(60);
 
-        NumberOfGuestsController number = new NumberOfGuestsController(globalStackPane);
+        NumberOfGuestsController number = new NumberOfGuestsController();
         number.setPrefWidth(110);
         number.setPrefHeight(60);
 
@@ -114,10 +121,6 @@ public class PopularDestinationsController {
 
         searchHB.widthProperty().addListener((ob, oldV, newV) -> {
             searchTF.setPrefWidth(newV.doubleValue() - 300);
-            if (CustomCalendar.calendarInstance != null && CustomCalendar.isCalendarVisible)
-                calendar.setLayout();
-            if (NumberOfGuestsController.rootGridPane != null && NumberOfGuestsController.isNumberOfGuestsVisible)
-                number.setLayout();
         });
 
         CustomButton ordersBtn = new CustomButton(
@@ -182,6 +185,18 @@ public class PopularDestinationsController {
         rootScrollPane.viewportBoundsProperty().addListener((obs, old, val) ->
                 updateStickyButton(rootScrollPane));
 
+        overlaySP.widthProperty().addListener((ob, oldV, newV) -> {
+            if(filterWindow != null && filterWindow.isVisible()) {
+                filterWindow.setSizeWindow();
+            }
+        });
+
+        overlaySP.heightProperty().addListener((ob, oldV, newV) -> {
+            if(filterWindow != null && filterWindow.isVisible()) {
+                filterWindow.setSizeWindow();
+            }
+        });
+
         return overlaySP;
     }
 
@@ -211,7 +226,7 @@ public class PopularDestinationsController {
                 observableHotels = FXCollections.observableArrayList(hotels);
                 filteredHotels = new FilteredList<>(observableHotels, p -> true);
                 hotelsLV.setItems(filteredHotels);
-                int cellHeight = 220;
+                int cellHeight = 230;
                 hotelsLV.setPrefHeight(hotels.size() * cellHeight); // начальная высота
 
                 rootAP.getChildren().remove(loadHB);
@@ -268,6 +283,17 @@ public class PopularDestinationsController {
         sortBtn.setPrefHeight(40);
         sortBtn.getStyleClass().add("custom-button");
         sortBtn.setPadding(new Insets(0));
+        sortBtn.setOnAction(e -> {
+            if (sorterWindow == null) {
+                sorterWindow = new SorterWindow();
+                sorterWindow.show(sortBtn);
+            } else {
+                if (!sorterWindow.getPopup().isShowing())
+                    sorterWindow.show(sortBtn);
+                else
+                    sorterWindow.hide();
+            }
+        });
 
         HBox backgroundHBSort = new HBox();
         backgroundHBSort.getStyleClass().add("sort-button-hbox");
@@ -290,6 +316,16 @@ public class PopularDestinationsController {
         filterBtn.setPrefWidth(160); // фиксированная ширина
         filterBtn.getStyleClass().add("custom-button");
         filterBtn.setPadding(new Insets(0));
+        filterBtn.setOnAction(e -> {
+            if (filterWindow == null) {
+                filterWindow = new FilterWindow(overlaySP);
+            } else {
+                if (!filterWindow.isVisible())
+                    filterWindow.show();
+                else
+                    filterWindow.hide();
+            }
+        });
 
         HBox backgroundHBFilter = new HBox(5);
         backgroundHBFilter.getStyleClass().add("sort-button-hbox");
@@ -429,6 +465,20 @@ public class PopularDestinationsController {
                 stickyBackBtn.setManaged(false);
                 isStickyMode = false;
             }
+        }
+    }
+
+    public static SortedContext getSortedContext() {
+        return sortedContext;
+    }
+
+    public static void setSortedContext(SortedContext sortedContext) {
+        PopularDestinationsController.sortedContext = sortedContext;
+    }
+
+    public static void sortHotels(Comparator<Hotel> comparator) {
+        if (observableHotels != null) {
+            FXCollections.sort(observableHotels, comparator);
         }
     }
 }

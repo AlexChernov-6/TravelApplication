@@ -15,4 +15,12 @@ public class RoomService extends BaseService<Room> {
             return session.createQuery(hql, Double.class).setParameter("HOTEL_ID", hotelId).uniqueResult();
         }
     }
+
+    public double getMaxRoomPriceByHotelId(int hotelId) {
+        String hql = "select roomPrice from Room where hotel.idHotel = :HOTEL_ID order by roomPrice desc limit 1";
+
+        try(Session session = BaseService.sessionFactory.openSession()) {
+            return session.createQuery(hql, Double.class).setParameter("HOTEL_ID", hotelId).uniqueResult();
+        }
+    }
 }

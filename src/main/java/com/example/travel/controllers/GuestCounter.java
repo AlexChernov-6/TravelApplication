@@ -1,90 +1,80 @@
 package com.example.travel.controllers;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 import java.util.Objects;
 
-public class GuestCounter extends HBox {
-    private final Label countLB;
-    private final boolean isAdults;
+public class GuestCounter extends VBox {
+    private int count;
+    private final boolean isAdult;
     private final NumberOfGuestsController controller;
+    private Label countLabel;
 
-    public GuestCounter(boolean isAdults, NumberOfGuestsController controller) {
-        this.isAdults = isAdults;
+    public GuestCounter(boolean isAdult, NumberOfGuestsController controller) {
+        this.isAdult = isAdult;
         this.controller = controller;
+        this.count = isAdult ? 2 : 0; // начальные значения
 
-        getStyleClass().add("guest-counter");
-        setPrefHeight(40);
-        setMaxHeight(40);
         setAlignment(Pos.CENTER);
+        setSpacing(5);
+        setPadding(new Insets(5));
+        getStyleClass().add("guest-counter");
+        setMaxHeight(Region.USE_PREF_SIZE);
 
-        int initialCount = isAdults ? NumberOfGuestsController.adultsCount : NumberOfGuestsController.childrenCount;
-        countLB = new Label(String.valueOf(initialCount));
-        countLB.setAlignment(Pos.CENTER);
-        countLB.setPrefWidth(40); // фиксированная ширина, чтобы кнопки не скакали
-        countLB.setStyle("-fx-font-size: 16px");
+        HBox controls = new HBox(10);
+        controls.setAlignment(Pos.CENTER);
+        controls.setMaxWidth(Region.USE_PREF_SIZE);
 
-        Button minusBtn = createButton(true);
-        Button plusBtn = createButton(false);
+        Button minusBtn = createButton("/images/minus.png");
+        Button plusBtn = createButton("/images/plus.png");
+        countLabel = new Label(String.valueOf(count));
+        countLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
 
-        getChildren().addAll(minusBtn, countLB, plusBtn);
+        minusBtn.setOnAction(e -> changeCount(-1));
+        plusBtn.setOnAction(e -> changeCount(1));
+
+        controls.getChildren().addAll(minusBtn, countLabel, plusBtn);
+
+        getChildren().add(controls);
     }
 
-    private Button createButton(boolean isMinus) {
-        Button button = new Button();
-        button.getStyleClass().add("minus-or-plus-button");
-
-        String imageName = isMinus ? "/images/minus.png" : "/images/plus.png";
-        ImageView imageView = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream(imageName))));
-        imageView.setFitHeight(25);
-        imageView.setFitWidth(25);
-        imageView.setPreserveRatio(true);
-        button.setGraphic(imageView);
-
-        button.setOnAction(e -> {
-            int current = Integer.parseInt(countLB.getText());
-            int newValue = current;
-
-            if (isMinus) {
-                newValue = current - 1;
-                // Минимальное значение: для взрослых 1, для детей 0
-                if (isAdults) {
-                    if (newValue < 1) newValue = 1;
-                } else {
-                    if (newValue < 0) newValue = 0;
-                }
-            } else {
-                newValue = current + 1;
-                // Максимальное значение: взрослые до 10, дети до 5
-                int max = isAdults ? 10 : 5;
-                if (newValue > max) newValue = max;
-            }
-
-            if (newValue != current) {
-                // Обновляем лейбл
-                countLB.setText(String.valueOf(newValue));
-                // Обновляем статические переменные
-                if (isAdults) {
-                    NumberOfGuestsController.adultsCount = newValue;
-                } else {
-                    NumberOfGuestsController.childrenCount = newValue;
-                }
-                // Сообщаем контроллеру, что нужно обновить главную кнопку
-                controller.onCountChanged();
-            }
-        });
-
-        return button;
+    private Button createButton(String imagePath) {
+        Button btn = new Button();
+        btn.getStyleClass().add("minus-or-plus-button");
+        ImageView img = new ImageView(new Image(Objects.requireNonNull(
+                getClass().getResourceAsStream(imagePath))));
+        img.setFitHeight(15);
+        img.setFitWidth(15);
+        btn.setGraphic(img);
+        return btn;
     }
 
-    // Метод для принудительной установки значения (при показе панели)
+    private void changeCount(int delta) {
+        int newCount = count + delta;
+        if (newCount >= 0) {
+            count = newCount;
+            countLabel.setText(String.valueOf(count));
+            // Уведомляем контроллер
+            if (controller != null) {
+                if (isAdult) {
+                    controller.onCountChanged(count, controller.childrenCount);
+                } else {
+                    controller.onCountChanged(controller.adultsCount, count);
+                }
+            }
+        }
+    }
+
     public void setCount(int count) {
-        countLB.setText(String.valueOf(count));
+        this.count = count;
+        countLabel.setText(String.valueOf(count));
     }
 }
