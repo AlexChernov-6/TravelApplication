@@ -7,7 +7,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.image.Image;
 
 @Entity
-@Table(name = "Hotels", schema = "public")
+@Table(name = "hotels", schema = "public")
 public class Hotel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

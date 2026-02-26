@@ -81,7 +81,7 @@ public class CustomSelectedBtn extends Button {
             }
             if (context == PopularDestinationsController.SortedContext.MORE_EXPENSIVE) {
                 PopularDestinationsController.sortHotels(Comparator.comparingDouble(
-                        h -> roomService.getMaxRoomPriceByHotelId(h.getIdHotel())));
+                        (Hotel h) -> roomService.getMinRoomPriceByHotelId(h.getIdHotel())).reversed());
             }
 
             sorterWindow.hide();

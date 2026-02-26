@@ -5,6 +5,7 @@ import com.example.travel.models.Direction;
 import com.example.travel.models.Hotel;
 import com.example.travel.services.DirectionService;
 import com.example.travel.services.HotelService;
+import com.example.travel.services.RoomService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -46,6 +47,8 @@ public class PopularDestinationsController {
     private static SortedContext sortedContext = SortedContext.BY_DEFAULT;
     private static SorterWindow sorterWindow;
     private static FilterWindow filterWindow;
+    protected static Direction oldPressedDirection;
+    private static final RoomService roomService = new RoomService();
 
     public enum SortedContext {
         BY_DEFAULT,
@@ -174,6 +177,7 @@ public class PopularDestinationsController {
             CustomDirection direction1 = new CustomDirection(direction);
             direction1.setOnAction(e -> {
                 showHotelsList(direction);
+                oldPressedDirection = direction;
             });
             popularDestinationsTP.getChildren().add(direction1);
         }
@@ -228,6 +232,18 @@ public class PopularDestinationsController {
                 hotelsLV.setItems(filteredHotels);
                 int cellHeight = 230;
                 hotelsLV.setPrefHeight(hotels.size() * cellHeight); // начальная высота
+
+                if (sortedContext == SortedContext.BY_DEFAULT) {
+                    PopularDestinationsController.sortHotels(Comparator.comparingDouble(Hotel::getHotelRating).reversed());
+                }
+                if (sortedContext == SortedContext.CHEAPER) {
+                    PopularDestinationsController.sortHotels(Comparator.comparingDouble(
+                            h -> roomService.getMinRoomPriceByHotelId(h.getIdHotel())));
+                }
+                if (sortedContext == SortedContext.MORE_EXPENSIVE) {
+                    PopularDestinationsController.sortHotels(Comparator.comparingDouble(
+                            (Hotel h) -> roomService.getMinRoomPriceByHotelId(h.getIdHotel())).reversed());
+                }
 
                 rootAP.getChildren().remove(loadHB);
 
