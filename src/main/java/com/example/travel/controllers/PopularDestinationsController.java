@@ -6,6 +6,9 @@ import com.example.travel.models.Hotel;
 import com.example.travel.services.DirectionService;
 import com.example.travel.services.HotelService;
 import com.example.travel.services.RoomService;
+import com.example.travel.util.HelpFullClass;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,12 +19,14 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 
 import java.util.Comparator;
 import java.util.List;
@@ -49,6 +54,7 @@ public class PopularDestinationsController {
     private static FilterWindow filterWindow;
     protected static Direction oldPressedDirection;
     private static final RoomService roomService = new RoomService();
+    private static  ScrollBar vBar;
 
     public enum SortedContext {
         BY_DEFAULT,
@@ -65,6 +71,8 @@ public class PopularDestinationsController {
         rootScrollPane.setContent(rootAP);
         rootScrollPane.setFitToWidth(true);
         rootScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        rootScrollPane.getStyleClass().add("scroll-pane");
+        new HelpFullClass().scrollPaneAnimation(rootScrollPane);
 
         overlaySP.getChildren().add(rootScrollPane);
 

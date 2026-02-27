@@ -1,14 +1,23 @@
 package com.example.travel.util;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.util.Duration;
 
 import java.util.Objects;
 
 public class HelpFullClass {
+    private ScrollBar vBar;
+
     public static String getRussianMonthName(int month) {
         switch (month) {
             case 1: return "Январь";
@@ -45,5 +54,54 @@ public class HelpFullClass {
         loadHB.getChildren().addAll(label, imageView);
 
         return loadHB;
+    }
+
+    public void scrollPaneAnimation(ScrollPane scrollPane) {
+        Platform.runLater(() -> {
+            Node verticalBar = scrollPane.lookup(".scroll-bar:vertical");
+            if (verticalBar instanceof ScrollBar) {
+                vBar = (ScrollBar) verticalBar;
+                vBar.setOpacity(0.0);
+            }
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
+            fadeIn.setToValue(1.0);
+
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(600), vBar);
+            fadeOut.setToValue(0.0);
+
+            PauseTransition hideTimer = new PauseTransition(Duration.seconds(2));
+            hideTimer.setOnFinished(event -> {
+                // По окончании таймера запускаем плавное исчезновение
+                // Останавливаем возможную анимацию появления
+                fadeIn.stop();
+                fadeOut.playFromStart();
+            });
+
+            Runnable showBar = () -> {
+                // Останавливаем текущие анимации
+                fadeOut.stop();
+                // Запускаем появление, если оно ещё не выполняется или opacity не полная
+                if (vBar.getOpacity() < 1.0) {
+                    fadeIn.playFromStart();
+                }
+                // Сбрасываем таймер скрытия
+                hideTimer.stop();
+                hideTimer.playFromStart();
+            };
+
+            vBar.setOnMouseEntered(e -> showBar.run());
+
+            vBar.setOnMouseExited(e -> {
+                hideTimer.stop();
+                hideTimer.playFromStart();
+            });
+
+            scrollPane.vvalueProperty().addListener((ob, oldV, newV) -> {
+                if (oldV.doubleValue() != newV.doubleValue()) {
+                    showBar.run();
+                }
+            });
+        });
     }
 }

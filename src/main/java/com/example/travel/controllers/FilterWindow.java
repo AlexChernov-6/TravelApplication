@@ -1,29 +1,35 @@
 package com.example.travel.controllers;
 
-import com.example.travel.services.DirectionService;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.geometry.Orientation;
-import javafx.geometry.Point2D;
+import com.example.travel.models.PaymentMethod;
+import com.example.travel.models.RefundPolicy;
+import com.example.travel.services.*;
+import com.example.travel.util.HelpFullClass;
+import javafx.application.Platform;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import org.controlsfx.control.RangeSlider;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class FilterWindow extends AnchorPane {
     private final StackPane overlaySP;
     private Pane shadowPane;
     private VBox bodyVB;
     private long maxPriceDirection;
-    private boolean isProgrammaticFromChange = false;
-    private boolean isProgrammaticBeforeChange = false;
+    private final HashMap<RefundPolicy, Boolean> mapCancellation = new HashMap<>();
+    private final HashMap<PaymentMethod, Boolean> mapPaymentMethods = new HashMap<>();
+    private ScrollPane bodySP;
 
     public FilterWindow(StackPane overlaySP) {
         this.overlaySP = overlaySP;
@@ -110,31 +116,43 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void createBody() {
-        ScrollPane bodySP = new ScrollPane();
+        bodySP = new ScrollPane();
         AnchorPane.setTopAnchor(bodySP, 50.0);
         AnchorPane.setLeftAnchor(bodySP, 0.0);
         AnchorPane.setRightAnchor(bodySP, 0.0);
         AnchorPane.setBottomAnchor(bodySP, 80.0);
         bodySP.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         bodySP.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        bodySP.getStyleClass().add("scroll-pane");
+        new HelpFullClass().scrollPaneAnimation(bodySP);
 
-        bodyVB = new VBox(1);
-        bodyVB.setStyle("-fx-background-color: gray;");
+        bodyVB = new VBox();
         bodySP.setContent(bodyVB);
         bodyVB.prefWidthProperty().bind(bodySP.widthProperty().subtract(10));
 
         createPriceWithNight();
+
+        createCountStart();
+
+        createRating();
+
+        createFilterButton("Условия отмены", mapCancellation, new RefundPolicyService().getAllRow());
+
+        createFilterButton("Оплата и бронирование", mapPaymentMethods, new PaymentMethodService().getAllRow());
+
+        createFeature("Удобства и услуги", new HotelFeatureService().getAllRow());
+
+        createFeature("Удобства в номерах", new RoomFeatureService().getAllRow());
 
         getChildren().add(bodySP);
     }
 
     private void createPriceWithNight() {
         VBox priceWithNightVB = new VBox(15);
-        priceWithNightVB.setPrefHeight(100);
-        priceWithNightVB.setStyle("-fx-background-color: white; -fx-padding: 15px;");
+        priceWithNightVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
 
         Label label = new Label("Цена за ночь");
-        label.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        label.getStyleClass().add("hint-label");
 
         HBox priceRange = new HBox(10);
 
@@ -208,9 +226,10 @@ public class FilterWindow extends AnchorPane {
 
         rangeSlider.setOrientation(Orientation.HORIZONTAL);
         rangeSlider.setShowTickMarks(false);
-        rangeSlider.setBlockIncrement(1500);
         rangeSlider.setMin(0);
         rangeSlider.setMax(maxPriceDirection);
+        rangeSlider.setHighValue(maxPriceDirection);
+        rangeSlider.getStyleClass().add("range-slider");
 
         fromPrice.setText(String.format("%d", Math.round(rangeSlider.getLowValue())));
         beforePrice.setText(String.format("%d", Math.round(rangeSlider.getHighValue())));
@@ -229,10 +248,145 @@ public class FilterWindow extends AnchorPane {
 
         bodyVB.getChildren().add(priceWithNightVB);
 
-        for(int i = 1; i <= 100; i++) {
-            Label label1 = new Label("fffffffffffffffffffff");
-            bodyVB.getChildren().add(label1);
+        createLine(priceWithNightVB);
+    }
+
+    private void createCountStart() {
+        VBox countStarsVB = new VBox(15);
+        countStarsVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
+
+        Label label = new Label("Количество звёзд");
+        label.getStyleClass().add("hint-label");
+
+        countStarsVB.getChildren().add(label);
+
+        for(int i = 6; i >= 0; i--) {
+            CountStarButton countStarButton = new CountStarButton(i);
+            countStarsVB.getChildren().add(countStarButton);
         }
+
+        bodyVB.getChildren().add(countStarsVB);
+
+        createLine(countStarsVB);
+    }
+
+    private void createRating() {
+        VBox ratingVB = new VBox(15);
+        ratingVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
+
+        Label label = new Label("Рейтинг отелей");
+        label.getStyleClass().add("hint-label");
+
+        ratingVB.getChildren().add(label);
+
+        CustomRadioParent parent = new CustomRadioParent();
+
+        CustomRadioButton aboveFore = new CustomRadioButton(parent, "Выше 4", false);
+        aboveFore.addStyleButtonText("above-fore");
+
+        CustomRadioButton aboveThree = new CustomRadioButton(parent, "Выше 3", false);
+        aboveThree.addStyleButtonText("above-three");
+
+        CustomRadioButton aboveTwo = new CustomRadioButton(parent, "Выше 2", false);
+        aboveTwo.addStyleButtonText("above-two");
+
+        CustomRadioButton anyRating = new CustomRadioButton(parent, "Любой рейтинг", true);
+        anyRating.addStyleButtonText("any-rating");
+
+        ratingVB.getChildren().addAll(aboveFore, aboveThree, aboveTwo, anyRating);
+
+        bodyVB.getChildren().add(ratingVB);
+
+        createLine(ratingVB);
+    }
+
+    private <T> void createFilterButton(String hintTxt, HashMap<T, Boolean> map, List<T> list) {
+        VBox rootVB = new VBox(15);
+        rootVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
+
+        Label label = new Label(hintTxt);
+        label.getStyleClass().add("hint-label");
+
+        rootVB.getChildren().add(label);
+
+        HBox horizontalBox = new HBox(10);
+
+        for(T entity : list) {
+            Button button = new Button(entity.toString());
+            button.getStyleClass().add("reset-button");
+            button.setStyle("-fx-font-size: 15px;");
+            TilePane.setAlignment(button, Pos.TOP_LEFT);
+            map.put(entity, false);
+            button.setOnAction(e -> {
+                boolean value = map.get(entity);
+                map.replace(entity, value, !value);
+                if(map.get(entity)) {
+                    button.getStyleClass().add("show-result-button");
+                    button.getStyleClass().remove("reset-button");
+                } else {
+                    button.getStyleClass().add("reset-button");
+                    button.getStyleClass().remove("show-result-button");
+                }
+            });
+            horizontalBox.getChildren().add(button);
+        }
+
+        rootVB.getChildren().add(horizontalBox);
+
+        bodyVB.getChildren().add(rootVB);
+
+        createLine(rootVB);
+    }
+
+    private <T> void createFeature(String hintTxt, List<T> list) {
+        VBox rootVB = new VBox(15);
+        rootVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
+
+        Label label = new Label(hintTxt);
+        label.getStyleClass().add("hint-label");
+
+        rootVB.getChildren().add(label);
+
+        for(int i = 0; i < list.size(); i++) {
+            CustomCheckButton button = new CustomCheckButton(list.get(i).toString());
+            rootVB.getChildren().add(button);
+            if(i >= 5) {
+                button.setManaged(false);
+                button.setVisible(false);
+            }
+        }
+
+        if(list.size() > 5) {
+            Button showMany = new Button("Показать больше");
+            showMany.prefWidthProperty().bind(rootVB.widthProperty());
+            showMany.getStyleClass().add("show-many-button");
+            showMany.setOnAction(e -> {
+                if(showMany.getText().equals("Показать больше")) {
+                    rootVB.getChildren().remove(showMany);
+                    rootVB.getChildren().forEach(node -> {
+                        node.setManaged(true);
+                        node.setVisible(true);
+                    });
+                    rootVB.getChildren().add(showMany);
+                    showMany.setText("Показать меньше");
+                } else {
+                    rootVB.getChildren().remove(showMany);
+                    for(int i = rootVB.getChildren().size() - 1; i > 5; i --) {
+                        Node node = rootVB.getChildren().get(i);
+                        node.setManaged(false);
+                        node.setVisible(false);
+                    }
+                    rootVB.getChildren().add(showMany);
+                    showMany.setText("Показать больше");
+                    ensureVisible(bodySP, label);
+                }
+            });
+            rootVB.getChildren().add(showMany);
+        }
+
+        bodyVB.getChildren().add(rootVB);
+
+        createLine(rootVB);
     }
 
     private void createLow() {
@@ -251,5 +405,34 @@ public class FilterWindow extends AnchorPane {
         showResultBtn.getStyleClass().add("show-result-button");
 
         getChildren().addAll(resetBtn, showResultBtn);
+    }
+
+    private static void ensureVisible(ScrollPane scrollPane, Node node) {
+        Bounds viewport = scrollPane.getViewportBounds();
+        double contentHeight = scrollPane.getContent().localToScene(scrollPane.getContent().getBoundsInLocal()).getHeight();
+        double nodeMinY = node.localToScene(node.getBoundsInLocal()).getMinY();
+        double nodeMaxY = node.localToScene(node.getBoundsInLocal()).getMaxY();
+
+        double vValueDelta = 0;
+        double vValueCurrent = scrollPane.getVvalue();
+
+        if (nodeMaxY < 0) {
+            // currently located above (remember, top left is (0,0))
+            vValueDelta = (nodeMinY - viewport.getHeight()) / contentHeight;
+        } else if (nodeMinY > viewport.getHeight()) {
+            // currently located below
+            vValueDelta = (nodeMinY + viewport.getHeight()) / contentHeight;
+        }
+        scrollPane.setVvalue(vValueCurrent + vValueDelta);
+    }
+
+    private void createLine(VBox parent) {
+        Line line = new javafx.scene.shape.Line();
+        line.setStroke(Color.rgb(170, 170, 170, 0.5));
+        line.setStrokeLineJoin(StrokeLineJoin.ROUND);
+        line.setStrokeLineCap(StrokeLineCap.ROUND);
+        line.setStrokeWidth(3);
+        line.endXProperty().bind(parent.widthProperty().subtract(40));
+        parent.getChildren().add(line);
     }
 }

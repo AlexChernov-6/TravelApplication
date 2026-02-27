@@ -353,7 +353,7 @@ public class HotelCell extends ListCell<Hotel> {
         else if (hotelRating < 3 && hotelRating >= 2)
             ratingLB.setStyle("-fx-background-color: #cbdb16;");
         else
-            ratingLB.setStyle("-fx-background-color: b00000;");
+            ratingLB.setStyle("-fx-background-color: #b00000;");
 
         countRatingsLB.setText("Число оценок: " + hotel.getCountRatings());
 

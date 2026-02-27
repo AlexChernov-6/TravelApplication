@@ -34,4 +34,9 @@ public class RoomFeature {
     public void setFeatureName(String featureName) {
         this.featureName = featureName;
     }
+
+    @Override
+    public String toString() {
+        return featureName;
+    }
 }

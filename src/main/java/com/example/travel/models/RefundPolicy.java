@@ -34,4 +34,9 @@ public class RefundPolicy {
     public void setRefundName(String refundName) {
         this.refundName = refundName;
     }
+
+    @Override
+    public String toString() {
+        return refundName;
+    }
 }

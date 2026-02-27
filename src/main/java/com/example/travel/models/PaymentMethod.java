@@ -34,4 +34,9 @@ public class PaymentMethod {
     public void setPaymentName(String paymentName) {
         this.paymentName = paymentName;
     }
+
+    @Override
+    public String toString() {
+        return paymentName;
+    }
 }

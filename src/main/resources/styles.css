@@ -300,3 +300,159 @@
 .text-field-from-or-before:focused {
     -fx-border-color: #a009b8;
 }
+
+/* Общие стили для обоих ползунков (низкого и высокого) */
+.range-slider .low-thumb,
+.range-slider .high-thumb {
+    -fx-background-color: #b40acf;
+    -fx-background-radius: 10px; /* половина от 20px – делает круг */
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-pref-height: 20px;
+    -fx-pref-width: 20px;
+    -fx-min-height: 20px;
+    -fx-min-width: 20px;
+    -fx-max-height: 20px;
+    -fx-max-width: 20px;
+    -fx-focus-color: transparent;      /* убирает стандартную синюю обводку фокуса */
+    -fx-faint-focus-color: transparent; /* убирает дополнительную обводку */
+}
+
+.range-slider .low-thumb:hover,
+.range-slider .high-thumb:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #da4df0;
+}
+
+.range-slider .low-thumb:focused,
+.range-slider .high-thumb:focused {
+    -fx-effect: none;          /* убирает свечение/тень */
+    -fx-scale-x: 1;            /* сбрасывает возможное масштабирование */
+    -fx-scale-y: 1;
+    -fx-background-insets: 0;
+}
+
+.range-slider .track {
+    -fx-background-color: rgba(220,220,220);
+}
+
+.range-slider .range-bar {
+    -fx-background-color: #b40acf;
+}
+
+.hint-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.button-star-selected {
+    -fx-border-width: 1px;
+    -fx-background-color: transparent;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-border-color: rgba(200,200,200);
+}
+
+.button-star-selected-select {
+    -fx-background-color: #da4df0;
+    -fx-border-color: transparent;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-border-width: 0px;
+}
+
+.button-star-selected-select {
+    -fx-effect: none;
+}
+
+.above-fore {
+    -fx-background-color: #0bb527;
+    -fx-text-fill: white;
+    -fx-padding: 5px 10px;
+    -fx-background-radius: 10px;
+}
+
+.above-three {
+    -fx-background-color: #7fb50b;
+    -fx-text-fill: white;
+    -fx-padding: 5px 10px;
+    -fx-background-radius: 10px;
+}
+
+.above-two {
+    -fx-background-color: #cbdb16;
+    -fx-text-fill: black;
+    -fx-padding: 5px 10px;
+    -fx-background-radius: 10px;
+}
+
+.any-rating {
+    -fx-background-color: rgba(230,230,230);
+    -fx-text-fill: black;
+    -fx-padding: 5px 10px;
+    -fx-background-radius: 10px;
+}
+
+.show-many-button {
+    -fx-background-color: rgba(218, 77, 240, 0.3);
+    -fx-background-radius: 10px;
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 10px;
+    -fx-font-size: 16px;
+    -fx-text-fill: #b40acf;
+    -fx-padding: 10px;
+}
+
+.show-many-button:hover {
+    -fx-background-color: rgba(218, 77, 240, 0.5);
+}
+
+.scroll-pane {
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-background-color:transparent;
+}
+
+.scroll-pane .scroll-bar:vertical .track {
+    -fx-background-color: rgba(220, 220, 220, 0.5);
+    -fx-background-radius: 8px;
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(160, 160, 160, 0.7);
+    -fx-background-radius: 8px;
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.scroll-pane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .scroll-bar:vertical .decrement-arrow,
+.scroll-pane .scroll-bar:vertical .increment-arrow {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
+    -fx-effect: none;
+}
+
+.scroll-pane .scroll-bar:vertical .decrement-arrow:hover,
+.scroll-pane .scroll-bar:vertical .increment-arrow:hover {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
+    -fx-effect: none;
+}
+
+.scroll-pane .scroll-bar:vertical .decrement-arrow:pressed,
+.scroll-pane .scroll-bar:vertical .increment-arrow:pressed {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
+    -fx-effect: none;
+}
