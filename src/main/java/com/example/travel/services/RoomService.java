@@ -3,6 +3,8 @@ package com.example.travel.services;
 import com.example.travel.models.Room;
 import org.hibernate.Session;
 
+import java.util.List;
+
 public class RoomService extends BaseService<Room> {
     public RoomService() {
         super(Room.class);
@@ -13,6 +15,14 @@ public class RoomService extends BaseService<Room> {
 
         try(Session session = BaseService.sessionFactory.openSession()) {
             return session.createQuery(hql, Double.class).setParameter("HOTEL_ID", hotelId).uniqueResult();
+        }
+    }
+
+    public List<Room> getAllRowByHotelId(int hotelId) {
+        String hql = "from Room where hotel.idHotel = :HOTEL_ID";
+
+        try(Session session = BaseService.sessionFactory.openSession()) {
+            return session.createQuery(hql, Room.class).setParameter("HOTEL_ID", hotelId).list();
         }
     }
 }

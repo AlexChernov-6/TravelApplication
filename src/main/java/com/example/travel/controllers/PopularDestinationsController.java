@@ -10,6 +10,9 @@ import com.example.travel.util.HelpFullClass;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -31,6 +34,7 @@ import javafx.util.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import static com.example.travel.util.HelpFullClass.createLoadHB;
 
@@ -55,6 +59,8 @@ public class PopularDestinationsController {
     protected static Direction oldPressedDirection;
     private static final RoomService roomService = new RoomService();
     private static  ScrollBar vBar;
+
+    protected static ObjectProperty<Predicate<Hotel>> nameHotel = new SimpleObjectProperty<>();
 
     public enum SortedContext {
         BY_DEFAULT,
@@ -81,6 +87,16 @@ public class PopularDestinationsController {
         searchTF.setPromptText("Направления или отели");
         searchTF.getStyleClass().add("search-text-field");
         HBox.setMargin(searchTF, new Insets(0, 0, 0, 10));
+
+        nameHotel.bind(Bindings.createObjectBinding(() -> hotel -> {
+            if(hotelsLV.isVisible()) {
+                if (searchTF.getText().isEmpty()) return true;
+                return hotel.getHotelName().toUpperCase().contains(searchTF.getText().toUpperCase());
+            }
+            return false;
+
+        }, searchTF.textProperty()));
+
         searchTF.textProperty().addListener((ob, oldV, newV) -> {
             String searchText = newV == null ? "" : newV.trim();
 
@@ -96,14 +112,10 @@ public class PopularDestinationsController {
                     }
                 });
             } else if (hotelsLV.isVisible() && filteredHotels != null) {
-                // Фильтрация отелей (ListView)
-                filteredHotels.setPredicate(hotel -> {
-                    if (searchText.isEmpty()) return true;
-                    return hotel.getHotelName().toUpperCase().contains(searchText.toUpperCase());
-                });
                 // Обновляем высоту списка в зависимости от количества отфильтрованных элементов
                 int cellHeight = 230;
                 hotelsLV.setPrefHeight(filteredHotels.size() * cellHeight);
+                popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
             }
         });
 
@@ -237,6 +249,7 @@ public class PopularDestinationsController {
 
                 observableHotels = FXCollections.observableArrayList(hotels);
                 filteredHotels = new FilteredList<>(observableHotels, p -> true);
+                filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get(), nameHotel));
                 hotelsLV.setItems(filteredHotels);
                 int cellHeight = 230;
                 hotelsLV.setPrefHeight(hotels.size() * cellHeight); // начальная высота
@@ -446,11 +459,6 @@ public class PopularDestinationsController {
                 node.setManaged(true);
             }
         });
-
-        // Сброс фильтра отелей (если был)
-        if (filteredHotels != null) {
-            filteredHotels.setPredicate(p -> true);
-        }
     }
 
     private static void updateStickyButton(ScrollPane scrollPane) {
@@ -504,5 +512,17 @@ public class PopularDestinationsController {
         if (observableHotels != null) {
             FXCollections.sort(observableHotels, comparator);
         }
+    }
+
+    public static FilteredList<Hotel> getFilteredHotels() {
+        return filteredHotels;
+    }
+
+    public static ListView<Hotel> getHotelsLV() {
+        return hotelsLV;
+    }
+
+    public static Label getPopularDestinationsLb() {
+        return popularDestinationsLb;
     }
 }

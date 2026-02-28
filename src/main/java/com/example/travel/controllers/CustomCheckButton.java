@@ -7,13 +7,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 
+import java.util.List;
 import java.util.Objects;
 
 public class CustomCheckButton extends Button {
 
     private boolean isSelected = false;
 
-    public CustomCheckButton(String text) {
+    public CustomCheckButton(String text, List<String> assemblyList) {
         getStyleClass().add("custom-button");
         HBox rootHB = new HBox(10);
         rootHB.setAlignment(Pos.CENTER_LEFT);
@@ -44,6 +45,11 @@ public class CustomCheckButton extends Button {
         });
 
         setOnAction(e -> {
+            if(assemblyList.contains(text))
+                assemblyList.remove(text);
+            else
+                assemblyList.add(text);
+
             isSelected = !isSelected;
 
             if(isSelected) {

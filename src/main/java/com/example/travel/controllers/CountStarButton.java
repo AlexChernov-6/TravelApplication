@@ -7,12 +7,15 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 
+import java.util.List;
 import java.util.Objects;
 
 public class CountStarButton extends Button {
     private boolean isSelected = false;
+    private List<Integer> countStarList;
 
-    public CountStarButton(int countStar) {
+    public CountStarButton(int countStar, FilterWindow filterWindow) {
+        this.countStarList = filterWindow.getCountStartList();
         getStyleClass().add("custom-button");
         HBox rootHB = new HBox(10);
         rootHB.setAlignment(Pos.CENTER_LEFT);
@@ -43,6 +46,10 @@ public class CountStarButton extends Button {
         });
 
         setOnAction(e -> {
+            if(countStarList.contains(countStar))
+                countStarList.remove((Integer) countStar);
+            else
+                countStarList.add(countStar);
             isSelected = !isSelected;
 
             if(isSelected) {

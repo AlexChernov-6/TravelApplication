@@ -2,6 +2,8 @@ package com.example.travel.models;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "refund_policies", schema = "public")
 public class RefundPolicy {
@@ -38,5 +40,17 @@ public class RefundPolicy {
     @Override
     public String toString() {
         return refundName;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        RefundPolicy that = (RefundPolicy) object;
+        return idRefundPolicy == that.idRefundPolicy && Objects.equals(refundName, that.refundName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idRefundPolicy, refundName);
     }
 }

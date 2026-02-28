@@ -2,6 +2,8 @@ package com.example.travel.models;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "payment_methods", schema = "public")
 public class PaymentMethod {
@@ -38,5 +40,17 @@ public class PaymentMethod {
     @Override
     public String toString() {
         return paymentName;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        PaymentMethod that = (PaymentMethod) object;
+        return idPaymentMethod == that.idPaymentMethod && Objects.equals(paymentName, that.paymentName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idPaymentMethod, paymentName);
     }
 }

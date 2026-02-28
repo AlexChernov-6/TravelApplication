@@ -19,9 +19,11 @@ public class CustomRadioButton extends Button {
     private Circle circle;
     private Boolean isSelected;
     private Label buttonText;
+    private double rat;
 
-    public CustomRadioButton(CustomRadioParent parent, String text, boolean isStartValue) {
+    public CustomRadioButton(CustomRadioParent parent, double rat, boolean isStartValue) {
         this.isSelected = isStartValue;
+        this.rat = rat;
         parent.getCustomRadioButtonList().add(this);
         getStyleClass().add("custom-button");
 
@@ -42,7 +44,10 @@ public class CustomRadioButton extends Button {
 
         buttonText = new Label();
         buttonText.getStyleClass().add("sort-button-text");
-        buttonText.setText(text);
+        if (rat > 0)
+            buttonText.setText("Выше " + String.format("%.1f", rat));
+        else
+            buttonText.setText("Любой рейтинг");
 
         rootHB.getChildren().addAll(circleStackPane, buttonText);
 
@@ -95,5 +100,13 @@ public class CustomRadioButton extends Button {
 
     public void setSelected(Boolean selected) {
         isSelected = selected;
+    }
+
+    public Boolean getSelected() {
+        return isSelected;
+    }
+
+    public double getRat() {
+        return rat;
     }
 }
