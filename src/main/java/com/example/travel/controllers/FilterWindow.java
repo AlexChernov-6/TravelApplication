@@ -29,6 +29,8 @@ public class FilterWindow extends AnchorPane {
     private VBox bodyVB;
     private long maxPriceDirection;
     private final HashMap<RefundPolicy, Boolean> mapCancellation = new HashMap<>();
+    private final HashMap<Object, Button> mapModelButtons = new HashMap<>();
+
     private final HashMap<PaymentMethod, Boolean> mapPaymentMethods = new HashMap<>();
     private ScrollPane bodySP;
     protected ObjectProperty<Predicate<Hotel>> filterPredicate = new SimpleObjectProperty<>();
@@ -41,6 +43,14 @@ public class FilterWindow extends AnchorPane {
 
     private final List<String> hotelFeatures = new ArrayList<>();
     private final List<String> roomFeatures = new ArrayList<>();
+
+    private TextField fromPriceTF, beforePriceTF;
+
+    private VBox countStarsVB;
+
+    private CustomRadioButton anyRating;
+
+    private List<CustomCheckButton> allCheckButtons = new ArrayList<>();
 
     public FilterWindow(StackPane overlaySP) {
         this.overlaySP = overlaySP;
@@ -169,7 +179,7 @@ public class FilterWindow extends AnchorPane {
 
         RangeSlider rangeSlider = new RangeSlider();
 
-        TextField fromPriceTF = new TextField();
+        fromPriceTF = new TextField();
         fromPriceTF.setPromptText("От");
         fromPriceTF.getStyleClass().add("text-field-from-or-before");
         HBox.setHgrow(fromPriceTF, Priority.ALWAYS);
@@ -204,7 +214,7 @@ public class FilterWindow extends AnchorPane {
             }
         });
 
-        TextField beforePriceTF = new TextField();
+        beforePriceTF = new TextField();
         beforePriceTF.setPromptText("До");
         beforePriceTF.getStyleClass().add("text-field-from-or-before");
         HBox.setHgrow(beforePriceTF, Priority.ALWAYS);
@@ -221,9 +231,9 @@ public class FilterWindow extends AnchorPane {
         }));
         beforePriceTF.focusedProperty().addListener((ob, oldV, newV) -> {
             if (beforePriceTF.getText().isEmpty() && newV) {
-                beforePriceTF.setText(String.format("%d", 0));
+                beforePriceTF.setText(String.format("%d", maxPriceDirection));
             }
-            if ((beforePriceTF.getText().isEmpty() || Long.parseLong(beforePriceTF.getText()) == 0) && !newV) {
+            if ((beforePriceTF.getText().isEmpty() || Long.parseLong(beforePriceTF.getText()) == maxPriceDirection) && !newV) {
                 beforePriceTF.setText("");
             } else if (Long.parseLong(beforePriceTF.getText()) > maxPriceDirection && !newV) {
                 beforePriceTF.setText(String.format("%d", maxPriceDirection));
@@ -250,17 +260,23 @@ public class FilterWindow extends AnchorPane {
         rangeSlider.setHighValue(maxPriceDirection);
         rangeSlider.getStyleClass().add("range-slider");
 
-        fromPriceTF.setText(String.format("%d", Math.round(rangeSlider.getLowValue())));
-        beforePriceTF.setText(String.format("%d", Math.round(rangeSlider.getHighValue())));
+        if (Math.round(rangeSlider.getLowValue()) != 0)
+            fromPriceTF.setText(String.format("%d", Math.round(rangeSlider.getLowValue())));
+        if(Math.round(rangeSlider.getHighValue()) != maxPriceDirection)
+            beforePriceTF.setText(String.format("%d", Math.round(rangeSlider.getHighValue())));
 
         rangeSlider.lowValueProperty().addListener((obs, oldVal, newVal) -> {
             if (!fromPriceTF.isFocused())
                 fromPriceTF.setText(String.format("%d", newVal.intValue()));
+            if(newVal.doubleValue() == rangeSlider.getMin())
+                fromPriceTF.setText("");
         });
 
         rangeSlider.highValueProperty().addListener((obs, oldVal, newVal) -> {
             if (!beforePriceTF.isFocused())
                 beforePriceTF.setText(String.format("%d", newVal.intValue()));
+            if(newVal.doubleValue() == rangeSlider.getMax())
+                beforePriceTF.setText("");
         });
 
         priceWithNightVB.getChildren().add(rangeSlider);
@@ -271,7 +287,7 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void createCountStart() {
-        VBox countStarsVB = new VBox(15);
+        countStarsVB = new VBox(15);
         countStarsVB.setStyle("-fx-background-color: white; -fx-padding: 5px 15px;");
 
         Label label = new Label("Количество звёзд");
@@ -309,7 +325,7 @@ public class FilterWindow extends AnchorPane {
         CustomRadioButton aboveTwo = new CustomRadioButton(parent, 2, false);
         aboveTwo.addStyleButtonText("above-two");
 
-        CustomRadioButton anyRating = new CustomRadioButton(parent, 0, true);
+        anyRating = new CustomRadioButton(parent, 0, true);
         anyRating.addStyleButtonText("any-rating");
 
         ratingVB.getChildren().addAll(aboveFore, aboveThree, aboveTwo, anyRating);
@@ -332,6 +348,7 @@ public class FilterWindow extends AnchorPane {
 
         for (T entity : list) {
             Button button = new Button(entity.toString());
+            mapModelButtons.put(entity, button);
             button.getStyleClass().add("reset-button");
             button.setStyle("-fx-font-size: 15px;");
             TilePane.setAlignment(button, Pos.TOP_LEFT);
@@ -368,6 +385,7 @@ public class FilterWindow extends AnchorPane {
 
         for (int i = 0; i < list.size(); i++) {
             CustomCheckButton button = new CustomCheckButton(list.get(i).toString(), assemblyList);
+            allCheckButtons.add(button);
             rootVB.getChildren().add(button);
             if (i >= 5) {
                 button.setManaged(false);
@@ -415,6 +433,9 @@ public class FilterWindow extends AnchorPane {
         resetBtn.setPrefHeight(50);
         resetBtn.setPrefWidth(150);
         resetBtn.getStyleClass().add("reset-button");
+        resetBtn.setOnAction(e -> {
+            resetAllState();
+        });
 
         Button showResultBtn = new Button("Показать");
         AnchorPane.setRightAnchor(showResultBtn, 15.0);
@@ -463,7 +484,7 @@ public class FilterWindow extends AnchorPane {
         FilteredList<Hotel> filteredList = PopularDestinationsController.getFilteredHotels();
         filterPredicate.bind(Bindings.createObjectBinding(() -> hotel -> checkPrice(hotel) && checkStar(hotel)
                 && checkRat(hotel) && checkCancellation(hotel) && checkPaymentMethod(hotel)
-                && checkHotelFeature(hotel) ));
+                && checkHotelFeature(hotel) && checkRoomFeature(hotel)));
         PopularDestinationsController.getFilteredHotels().predicateProperty().bind(Bindings.createObjectBinding(() ->
                 PopularDestinationsController.nameHotel.get()
                         .and(filterPredicate.get()), PopularDestinationsController.nameHotel, filterPredicate));
@@ -521,13 +542,59 @@ public class FilterWindow extends AnchorPane {
             return true;
 
         HotelFeatureRelationService service = new HotelFeatureRelationService();
-        List<HotelFeature> res = service.getAllHotelFeatureByHotelId(hotel.getIdHotel()).stream()
-                .filter(h -> hotelFeatures.contains(h.getFeatureName())).toList();
+        List<HotelFeature> allHotelFeatureByHotelId = service.getAllHotelFeatureByHotelId(hotel.getIdHotel());
 
-        return !res.isEmpty();
+        List<HotelFeature> result = allHotelFeatureByHotelId.stream()
+                .filter(hotelFeature -> hotelFeatures.contains(hotelFeature.getFeatureName())).toList();
+
+        return result.size() == hotelFeatures.size();
+    }
+
+    private boolean checkRoomFeature(Hotel hotel) {
+        if(roomFeatures.isEmpty())
+            return  true;
+
+        RoomFeatureRelationService service = new RoomFeatureRelationService();
+        List<RoomFeature> allRoomFeatureByHotelId = service.getAllRoomFeatureByHotelId(hotel.getIdHotel());
+
+        List<RoomFeature> result = allRoomFeatureByHotelId.stream()
+                .filter(roomFeature -> roomFeatures.contains(roomFeature.getFeatureName())).toList();
+
+        return result.size() == roomFeatures.size();
     }
 
     public List<Integer> getCountStartList() {
         return countStartList;
+    }
+
+    private void resetAllState() {
+        fromPriceTF.setText(String.format("%d", 0));
+        beforePriceTF.setText(String.format("%d", maxPriceDirection));
+
+        for(Node node : countStarsVB.getChildren()) {
+            if(node instanceof CountStarButton)
+                ((CountStarButton) node).removeSelected();
+        }
+
+        anyRating.fire();
+
+        for(Map.Entry<RefundPolicy, Boolean> entry : mapCancellation.entrySet()) {
+            if(entry.getValue())
+                mapModelButtons.get(entry.getKey()).fire();
+        }
+
+        for(Map.Entry<PaymentMethod, Boolean> entry : mapPaymentMethods.entrySet()) {
+            if(entry.getValue())
+                mapModelButtons.get(entry.getKey()).fire();
+        }
+
+        for (CustomCheckButton btn : allCheckButtons) {
+            if (btn.isSelected()) {
+                btn.fire();
+            }
+        }
+
+        filteredData();
+        hide();
     }
 }

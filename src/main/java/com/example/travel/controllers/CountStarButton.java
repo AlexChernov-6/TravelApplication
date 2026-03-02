@@ -88,4 +88,9 @@ public class CountStarButton extends Button {
     public boolean isSelected() {
         return isSelected;
     }
+
+    public void removeSelected() {
+        if(isSelected)
+            fire();
+    }
 }
