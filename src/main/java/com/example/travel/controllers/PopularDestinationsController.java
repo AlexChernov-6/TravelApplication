@@ -128,22 +128,16 @@ public class PopularDestinationsController {
         number.setPrefWidth(110);
         number.setPrefHeight(60);
 
-        Button searchBtn = new Button("Найти");
-        searchBtn.getStyleClass().add("search-button");
-        searchBtn.setPrefWidth(120);
-        searchBtn.setPrefHeight(40);
-        HBox.setMargin(searchBtn, new Insets(10, 5, 10, 0));
-
         HBox searchHB = new HBox();
         searchTF.setPrefHeight(60.0);
         searchHB.getStyleClass().add("search-hbox");
-        searchHB.getChildren().addAll(searchTF, calendar, number, searchBtn);
+        searchHB.getChildren().addAll(searchTF, calendar, number);
         AnchorPane.setTopAnchor(searchHB, 15.0);
         AnchorPane.setLeftAnchor(searchHB, 10.0);
         AnchorPane.setRightAnchor(searchHB, 130.0);
 
         searchHB.widthProperty().addListener((ob, oldV, newV) -> {
-            searchTF.setPrefWidth(newV.doubleValue() - 300);
+            searchTF.setPrefWidth(newV.doubleValue() - 270);
         });
 
         CustomButton ordersBtn = new CustomButton(

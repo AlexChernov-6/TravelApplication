@@ -2,13 +2,13 @@ package com.example.travel.controllers;
 
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
-import javafx.geometry.Point2D;
 import javafx.scene.control.Button;
 import javafx.scene.layout.*;
 import javafx.stage.Popup;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.*;
 
 public class CustomCalendar extends Button {
     private static final double GRID_PANE_WIDTH = 400;
@@ -25,6 +25,13 @@ public class CustomCalendar extends Button {
     private CustomCalendarBtn startMonthBtn;
     private CustomCalendarBtn endMonthBtn;
 
+    private static Map<Button, Boolean> buttonsCalendar = new LinkedHashMap<>();
+
+    protected static Button startSelectedBtn;
+    protected static Button endSelectedBtn;
+
+    private static Map<YearMonth, Calendar> calendarMap = new HashMap<>();
+
     public CustomCalendar() {
         setText("Даты");
         getStyleClass().add("custom-calendar-btn");
@@ -35,34 +42,22 @@ public class CustomCalendar extends Button {
         popup.setHideOnEscape(true);
 
         // Создаём содержимое календаря
-        calendarGrid = createCalendarGrid();
-        popup.getContent().add(calendarGrid);
-
-        setOnAction(e -> toggleCalendar());
-    }
-
-    private GridPane createCalendarGrid() {
-        GridPane grid = new GridPane();
-        grid.setPrefWidth(GRID_PANE_WIDTH);
-        grid.setMaxWidth(GRID_PANE_WIDTH);
-        grid.setPrefHeight(GRID_PANE_HEIGHT);
-        grid.setMaxHeight(GRID_PANE_HEIGHT);
-        grid.getColumnConstraints().addAll(
+        calendarGrid = new GridPane();
+        calendarGrid.setPrefWidth(GRID_PANE_WIDTH);
+        calendarGrid.setMaxWidth(GRID_PANE_WIDTH);
+        calendarGrid.setPrefHeight(GRID_PANE_HEIGHT);
+        calendarGrid.setMaxHeight(GRID_PANE_HEIGHT);
+        calendarGrid.getColumnConstraints().addAll(
                 new ColumnConstraints(GRID_PANE_WIDTH / 2),
                 new ColumnConstraints(GRID_PANE_WIDTH / 2)
         );
-        grid.getRowConstraints().addAll(
+        calendarGrid.getRowConstraints().addAll(
                 new RowConstraints(GRID_PANE_FIRST_ROW_HEIGHT),
                 new RowConstraints(GRID_PANE_HEIGHT - GRID_PANE_FIRST_ROW_HEIGHT)
         );
-        grid.getStyleClass().add("popup");
+        calendarGrid.getStyleClass().add("popup");
 
-        calendarStart = new Calendar();
-        calendarEnd = new Calendar();
-        GridPane.setColumnIndex(calendarStart, 0);
-        GridPane.setRowIndex(calendarStart, 1);
-        GridPane.setColumnIndex(calendarEnd, 1);
-        GridPane.setRowIndex(calendarEnd, 1);
+        updateCalendars();
 
         startMonthBtn = new CustomCalendarBtn(true, GRID_PANE_FIRST_ROW_HEIGHT);
         endMonthBtn = new CustomCalendarBtn(false, GRID_PANE_FIRST_ROW_HEIGHT);
@@ -91,8 +86,10 @@ public class CustomCalendar extends Button {
             updateCalendars();
         });
 
-        grid.getChildren().addAll(startMonthBtn, endMonthBtn, calendarStart, calendarEnd);
-        return grid;
+        calendarGrid.getChildren().addAll(startMonthBtn, endMonthBtn);
+
+        popup.getContent().add(calendarGrid);
+        setOnAction(e -> toggleCalendar());
     }
 
     private void updateMonthButtons() {
@@ -112,15 +109,33 @@ public class CustomCalendar extends Button {
     }
 
     private void updateCalendars() {
-        calendarStart.createCalendar(YearMonth.of(currentYear, currentMonth));
-
+        Calendar newStart = Calendar.getInstance(YearMonth.of(currentYear, currentMonth));
         int nextMonth = currentMonth + 1;
         int nextMonthYear = currentYear;
         if (nextMonth > 12) {
             nextMonth = 1;
             nextMonthYear++;
         }
-        calendarEnd.createCalendar(YearMonth.of(nextMonthYear, nextMonth));
+        Calendar newEnd = Calendar.getInstance(YearMonth.of(nextMonthYear, nextMonth));
+
+        if (calendarStart != null) {
+            calendarGrid.getChildren().remove(calendarStart);
+        }
+        if (calendarEnd != null) {
+            calendarGrid.getChildren().remove(calendarEnd);
+        }
+
+        // Присваиваем новые
+        calendarStart = newStart;
+        calendarEnd = newEnd;
+
+        // Добавляем в grid с правильными координатами
+        GridPane.setConstraints(calendarStart, 0, 1);
+        GridPane.setConstraints(calendarEnd, 1, 1);
+        calendarGrid.getChildren().addAll(calendarStart, calendarEnd);
+
+        // Обновляем стили выделения для нового диапазона
+        Calendar.updateStyleRange();
     }
 
     private void toggleCalendar() {
@@ -137,5 +152,13 @@ public class CustomCalendar extends Button {
             double y = bounds.getMaxY() + 5;
             popup.show(this, x, y);
         }
+    }
+
+    public static Map<Button, Boolean> getButtonsCalendar() {
+        return buttonsCalendar;
+    }
+
+    public static Map<YearMonth, Calendar> getCalendarMap() {
+        return calendarMap;
     }
 }

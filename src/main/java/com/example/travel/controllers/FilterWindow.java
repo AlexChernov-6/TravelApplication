@@ -227,7 +227,7 @@ public class FilterWindow extends AnchorPane {
             try {
                 double value = Integer.parseInt(fromPriceTF.getText());
                 // Ограничиваем значение диапазоном
-                value = Math.max(rangeSlider.getMin(), Math.min(rangeSlider.getHighValue(), value));
+                value = Math.max(rangeSlider.getMin(), value);
                 rangeSlider.setLowValue(value);
             } catch (NumberFormatException e) {
                 // игнорируем
@@ -280,7 +280,7 @@ public class FilterWindow extends AnchorPane {
             try {
                 double value = Long.parseLong(beforePriceTF.getText());
                 // Ограничиваем значение диапазоном
-                value = Math.max(rangeSlider.getMax(), Math.min(rangeSlider.getHighValue(), value));
+                value = Math.min(rangeSlider.getMax(), value);
                 rangeSlider.setHighValue(value);
             } catch (NumberFormatException e) {
                 // игнорируем

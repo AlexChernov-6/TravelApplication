@@ -22,10 +22,10 @@
     -fx-font-size: 14px;
 }
 
-.custom-calendar-btn:pressed {
+.custom-calendar-btn:focused {
     -fx-background-color: transparent;
     -fx-border-width: 0px 1px 0px 1px;
-    -fx-border-color: blue;
+    -fx-border-color: #5754eb;
 }
 
 .custom-calendar {
@@ -94,8 +94,46 @@
 .custom-button-double {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
+    -fx-border-width: 0px;
     -fx-padding: 0px;
     -fx-font-size: 10px;
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+    -fx-effect: none;
+}
+.custom-button-double:hover {
+    -fx-cursor: hand;
+    -fx-background-color: rgba(220, 220, 220);
+}
+
+.custom-button-double:focused,
+.custom-button-double:pressed {
+    -fx-effect: none;
+}
+
+.custom-button-double-select {
+    -fx-background-color: #b40acf;
+    -fx-border-color: transparent;
+    -fx-border-width: 0px;
+    -fx-padding: 0px;
+    -fx-font-size: 10px;
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+    -fx-effect: none;
+}
+
+.custom-button-double-select:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #e028fc;
+}
+
+.custom-button-double-select:focused,
+.custom-button-double-select:pressed {
+    -fx-effect: none;
+}
+
+.custom-button-double-stack {
+    -fx-background-color: rgba(180, 10, 207, 0.3);
 }
 
 .custom-directions-label {
