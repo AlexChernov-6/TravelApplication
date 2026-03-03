@@ -52,6 +52,8 @@ public class FilterWindow extends AnchorPane {
 
     private List<CustomCheckButton> allCheckButtons = new ArrayList<>();
 
+    private boolean updating = false;
+
     public FilterWindow(StackPane overlaySP) {
         this.overlaySP = overlaySP;
 
@@ -185,19 +187,37 @@ public class FilterWindow extends AnchorPane {
         HBox.setHgrow(fromPriceTF, Priority.ALWAYS);
         fromPriceTF.setTextFormatter(new TextFormatter<>(change -> {
             String newText = change.getControlNewText();
+            String oldText = change.getControlText();
             if (newText.matches("\\d*")) {
-                if (newText.isEmpty())
+                if (newText.isEmpty()) {
                     fromPrice = 0;
-                else
+                    if(fromPriceTF.isFocused()) {
+                        change.setText("0");
+                        change.setCaretPosition(1);
+                        change.setAnchor(1);
+                    }
+                }
+                else {
+                    if(oldText.equals("0") && newText.startsWith("0") && newText.length() > 1) {
+                        String digit = newText.substring(1);
+                        change.setText(digit);
+                        change.setRange(0, oldText.length());
+                        change.setCaretPosition(digit.length());
+                        change.setAnchor(digit.length());
+                        fromPrice = Long.parseLong(digit);
+                        return change;
+                    }
                     fromPrice = Long.parseLong(newText);
+                    return change;
+                }
                 return change;
             }
             return null;
         }));
         fromPriceTF.focusedProperty().addListener((ob, oldV, newV) -> {
-            if (fromPriceTF.getText().isEmpty() && newV) {
+            if (fromPriceTF.getText().isEmpty() && newV)
                 fromPriceTF.setText(String.format("%d", 0));
-            }
+
             if ((fromPriceTF.getText().isEmpty() || Long.parseLong(fromPriceTF.getText()) == 0) && !newV) {
                 fromPriceTF.setText("");
             } else if (Long.parseLong(fromPriceTF.getText()) > maxPriceDirection && !newV) {
@@ -220,11 +240,29 @@ public class FilterWindow extends AnchorPane {
         HBox.setHgrow(beforePriceTF, Priority.ALWAYS);
         beforePriceTF.setTextFormatter(new TextFormatter<>(change -> {
             String newText = change.getControlNewText();
+            String oldText = change.getControlText();
             if (newText.matches("\\d*")) {
-                if (newText.isEmpty())
+                if (newText.isEmpty()) {
                     beforePrice = maxPriceDirection;
-                else
+                    if(beforePriceTF.isFocused()) {
+                        change.setText("0");
+                        change.setCaretPosition(1);
+                        change.setAnchor(1);
+                    }
+                }
+                else {
+                    if(oldText.equals("0") && newText.startsWith("0") && newText.length() > 1) {
+                        String digit = newText.substring(1);
+                        change.setText(digit);
+                        change.setRange(0, oldText.length());
+                        change.setCaretPosition(digit.length());
+                        change.setAnchor(digit.length());
+                        beforePrice = Long.parseLong(digit);
+                        return change;
+                    }
                     beforePrice = Long.parseLong(newText);
+                    return change;
+                }
                 return change;
             }
             return null;
@@ -240,9 +278,9 @@ public class FilterWindow extends AnchorPane {
             }
 
             try {
-                double value = Integer.parseInt(beforePriceTF.getText());
+                double value = Long.parseLong(beforePriceTF.getText());
                 // Ограничиваем значение диапазоном
-                value = Math.max(rangeSlider.getMin(), Math.min(rangeSlider.getHighValue(), value));
+                value = Math.max(rangeSlider.getMax(), Math.min(rangeSlider.getHighValue(), value));
                 rangeSlider.setHighValue(value);
             } catch (NumberFormatException e) {
                 // игнорируем
@@ -260,23 +298,20 @@ public class FilterWindow extends AnchorPane {
         rangeSlider.setHighValue(maxPriceDirection);
         rangeSlider.getStyleClass().add("range-slider");
 
-        if (Math.round(rangeSlider.getLowValue()) != 0)
-            fromPriceTF.setText(String.format("%d", Math.round(rangeSlider.getLowValue())));
-        if(Math.round(rangeSlider.getHighValue()) != maxPriceDirection)
-            beforePriceTF.setText(String.format("%d", Math.round(rangeSlider.getHighValue())));
-
         rangeSlider.lowValueProperty().addListener((obs, oldVal, newVal) -> {
-            if (!fromPriceTF.isFocused())
+            if (!fromPriceTF.isFocused()) {
                 fromPriceTF.setText(String.format("%d", newVal.intValue()));
-            if(newVal.doubleValue() == rangeSlider.getMin())
-                fromPriceTF.setText("");
+                if (newVal.doubleValue() == rangeSlider.getMin())
+                    fromPriceTF.setText("");
+            }
         });
 
         rangeSlider.highValueProperty().addListener((obs, oldVal, newVal) -> {
-            if (!beforePriceTF.isFocused())
+            if (!beforePriceTF.isFocused()) {
                 beforePriceTF.setText(String.format("%d", newVal.intValue()));
-            if(newVal.doubleValue() == rangeSlider.getMax())
-                beforePriceTF.setText("");
+                if (newVal.doubleValue() == rangeSlider.getMax())
+                    beforePriceTF.setText("");
+            }
         });
 
         priceWithNightVB.getChildren().add(rangeSlider);
