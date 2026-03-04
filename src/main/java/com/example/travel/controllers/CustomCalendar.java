@@ -1,6 +1,8 @@
 package com.example.travel.controllers;
 
+import com.example.travel.models.Hotel;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Bounds;
@@ -14,7 +16,9 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
+import java.util.function.Predicate;
 
+import static com.example.travel.controllers.PopularDestinationsController.updatePredicateFilteredHotels;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 
 public class CustomCalendar extends Button {
@@ -35,6 +39,7 @@ public class CustomCalendar extends Button {
     private static Map<Button, Boolean> buttonsCalendar = new LinkedHashMap<>();
 
     private static ObjectProperty<Button> startSelectedBtn = new SimpleObjectProperty<>();
+    protected static ObjectProperty<Predicate<Hotel>> startDatePredicate = new SimpleObjectProperty<>();
     private static ObjectProperty<Button> endSelectedBtn = new SimpleObjectProperty<>();
 
     private static Map<YearMonth, Calendar> calendarMap = new HashMap<>();
@@ -100,6 +105,16 @@ public class CustomCalendar extends Button {
 
         startSelectedBtn.addListener((ob, oldV, newV) -> {
             Platform.runLater(() -> {
+                if(newV != null)
+                    startDatePredicate.bind(Bindings.createObjectBinding(() -> hotel -> {
+                        LocalDate ld = LocalDate.now().plusDays(hotel.getDaysFromApplicationToCheckIn());
+                        return ld.equals(newV.getUserData()) || ld.isBefore((LocalDate) newV.getUserData());
+                    }));
+                else startDatePredicate.bind(Bindings.createObjectBinding(() -> hotel -> true));
+
+                PopularDestinationsController.filteres.put("CustomCalendar", startDatePredicate.get());
+                updatePredicateFilteredHotels();
+
                 if(oldV != null && oldV.equals(getEndSelectedBtn()))
                     setText(getTextByUserData(newV) + " - " + getTextByUserData(getEndSelectedBtn()));
                 else if(newV != null && oldV != newV && getEndSelectedBtn() == null) {
@@ -206,5 +221,9 @@ public class CustomCalendar extends Button {
     private String getTextByUserData(Button button) {
         return ((LocalDate) button.getUserData()).getDayOfMonth() + " "
                 + getRussianMonthName(((LocalDate) button.getUserData()).getMonthValue()).substring(0, 3).toLowerCase();
+    }
+
+    public static ObjectProperty<Predicate<Hotel>> startDatePredicateProperty() {
+        return startDatePredicate;
     }
 }

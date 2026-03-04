@@ -23,6 +23,8 @@ import org.controlsfx.control.RangeSlider;
 import java.util.*;
 import java.util.function.Predicate;
 
+import static com.example.travel.controllers.PopularDestinationsController.updatePredicateFilteredHotels;
+
 public class FilterWindow extends AnchorPane {
     private final StackPane overlaySP;
     private Pane shadowPane;
@@ -520,13 +522,9 @@ public class FilterWindow extends AnchorPane {
         filterPredicate.bind(Bindings.createObjectBinding(() -> hotel -> checkPrice(hotel) && checkStar(hotel)
                 && checkRat(hotel) && checkCancellation(hotel) && checkPaymentMethod(hotel)
                 && checkHotelFeature(hotel) && checkRoomFeature(hotel)));
-        PopularDestinationsController.getFilteredHotels().predicateProperty().bind(Bindings.createObjectBinding(() ->
-                PopularDestinationsController.nameHotel.get()
-                        .and(filterPredicate.get()), PopularDestinationsController.nameHotel, filterPredicate));
 
-        int cellHeight = 230;
-        PopularDestinationsController.getHotelsLV().setPrefHeight(filteredList.size() * cellHeight);
-        PopularDestinationsController.getPopularDestinationsLb().setText("Найдено отелей: " + filteredList.size());
+        PopularDestinationsController.filteres.put("FilterWindow", filterPredicate.get());
+        updatePredicateFilteredHotels();
     }
 
     private boolean checkPrice(Hotel hotel) {

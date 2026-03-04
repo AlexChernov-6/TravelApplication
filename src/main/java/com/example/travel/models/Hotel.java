@@ -28,6 +28,8 @@ public class Hotel {
     private short countStars;
     @Column(name = "count_ratings")
     private int countRatings;
+    @Column(name = "days_from_application_to_check_in")
+    private short daysFromApplicationToCheckIn;
 
     @Transient
     private Image[] cachedImages;
@@ -56,7 +58,7 @@ public class Hotel {
     public Hotel() {
     }
 
-    public Hotel(int idHotel, Direction direction, String hotelAddress, String hotelName, double hotelRating, byte[][] hotelPhotos, short countStars, int countRatings) {
+    public Hotel(int idHotel, Direction direction, String hotelAddress, String hotelName, double hotelRating, byte[][] hotelPhotos, short countStars, int countRatings, short daysFromApplicationToCheckIn) {
         this.idHotel = idHotel;
         this.direction = direction;
         this.hotelAddress = hotelAddress;
@@ -65,6 +67,7 @@ public class Hotel {
         this.hotelPhotos = hotelPhotos;
         this.countStars = countStars;
         this.countRatings = countRatings;
+        this.daysFromApplicationToCheckIn = daysFromApplicationToCheckIn;
     }
 
 
@@ -142,5 +145,13 @@ public class Hotel {
 
     public IntegerProperty currentImageIndexProperty() {
         return currentImageIndex;
+    }
+
+    public short getDaysFromApplicationToCheckIn() {
+        return daysFromApplicationToCheckIn;
+    }
+
+    public void setDaysFromApplicationToCheckIn(short daysFromApplicationToCheckIn) {
+        this.daysFromApplicationToCheckIn = daysFromApplicationToCheckIn;
     }
 }

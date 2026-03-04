@@ -31,9 +31,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static com.example.travel.util.HelpFullClass.createLoadHB;
@@ -59,6 +57,7 @@ public class PopularDestinationsController {
     protected static Direction oldPressedDirection;
     private static final RoomService roomService = new RoomService();
     private static  ScrollBar vBar;
+    protected static Map<String, Predicate<Hotel>> filteres = new HashMap<>();
 
     protected static ObjectProperty<Predicate<Hotel>> nameHotel = new SimpleObjectProperty<>();
 
@@ -88,17 +87,20 @@ public class PopularDestinationsController {
         searchTF.getStyleClass().add("search-text-field");
         HBox.setMargin(searchTF, new Insets(0, 0, 0, 10));
 
-        nameHotel.bind(Bindings.createObjectBinding(() -> hotel -> {
-            if(hotelsLV.isVisible()) {
-                if (searchTF.getText().isEmpty()) return true;
-                return hotel.getHotelName().toUpperCase().contains(searchTF.getText().toUpperCase());
-            }
-            return false;
-
-        }, searchTF.textProperty()));
+        nameHotel.bind(Bindings.createObjectBinding(() -> hotel -> true));
 
         searchTF.textProperty().addListener((ob, oldV, newV) -> {
             String searchText = newV == null ? "" : newV.trim();
+            nameHotel.bind(Bindings.createObjectBinding(() -> hotel -> {
+                if(hotelsLV.isVisible()) {
+                    if (newV == null || newV.isEmpty()) return true;
+                    return hotel.getHotelName().toUpperCase().contains(newV.toUpperCase());
+                }
+                return false;
+            }));
+
+            filteres.put("searchTF", nameHotel.get());
+            updatePredicateFilteredHotels();
 
             if (popularDestinationsTP.isVisible()) {
                 // Фильтрация направлений (TilePane)
@@ -111,11 +113,6 @@ public class PopularDestinationsController {
                         node.setManaged(matches);
                     }
                 });
-            } else if (hotelsLV.isVisible() && filteredHotels != null) {
-                // Обновляем высоту списка в зависимости от количества отфильтрованных элементов
-                int cellHeight = 230;
-                hotelsLV.setPrefHeight(filteredHotels.size() * cellHeight);
-                popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
             }
         });
 
@@ -242,8 +239,14 @@ public class PopularDestinationsController {
                     }
 
                 observableHotels = FXCollections.observableArrayList(hotels);
+                filteres.clear();
                 filteredHotels = new FilteredList<>(observableHotels, p -> true);
-                filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get(), nameHotel));
+                /*if(CustomCalendar.startDatePredicateProperty().get() == null)
+                    filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get(), nameHotel));
+                else
+                    filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get()
+                            .and(CustomCalendar.startDatePredicateProperty().get()), nameHotel, CustomCalendar.startDatePredicateProperty()));*/
+
                 hotelsLV.setItems(filteredHotels);
                 int cellHeight = 230;
                 hotelsLV.setPrefHeight(hotels.size() * cellHeight); // начальная высота
@@ -518,5 +521,17 @@ public class PopularDestinationsController {
 
     public static Label getPopularDestinationsLb() {
         return popularDestinationsLb;
+    }
+
+    public static void updatePredicateFilteredHotels() {
+        if(filteredHotels == null || !hotelsLV.isVisible())
+            return;
+
+        Predicate<Hotel> combined = filteres.values().stream().reduce(Predicate::and).orElse(h -> true);
+        filteredHotels.setPredicate(combined);
+
+        int cellHeight = 230;
+        hotelsLV.setPrefHeight(filteredHotels.size() * cellHeight);
+        popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
     }
 }
