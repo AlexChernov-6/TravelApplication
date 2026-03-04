@@ -97,8 +97,8 @@
     -fx-border-width: 0px;
     -fx-padding: 0px;
     -fx-font-size: 10px;
-    -fx-background-radius: 3px;
-    -fx-border-radius: 3px;
+    -fx-border-width: 0px;
+    -fx-border-radius: 0px;
     -fx-effect: none;
 }
 .custom-button-double:hover {
@@ -117,8 +117,8 @@
     -fx-border-width: 0px;
     -fx-padding: 0px;
     -fx-font-size: 10px;
-    -fx-background-radius: 3px;
-    -fx-border-radius: 3px;
+    -fx-border-width: 0px;
+    -fx-border-radius: 0px;
     -fx-effect: none;
 }
 
@@ -134,6 +134,19 @@
 
 .custom-button-double-stack {
     -fx-background-color: rgba(180, 10, 207, 0.3);
+    -fx-background-radius: 0px;
+    -fx-border-width: 0px;
+    -fx-border-radius: 0px;
+}
+
+.custom-button-double-disable {
+    -fx-background-color: rgba(220, 220, 220);
+    -fx-background-radius: 0px;
+    -fx-border-width: 0px;
+    -fx-border-radius: 0px;
+    -fx-padding: 0px;
+    -fx-font-size: 10px;
+    -fx-text-fill: rgba(100, 100, 100);
 }
 
 .custom-directions-label {

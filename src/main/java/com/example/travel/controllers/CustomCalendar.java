@@ -1,5 +1,8 @@
 package com.example.travel.controllers;
 
+import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.scene.control.Button;
@@ -8,7 +11,11 @@ import javafx.stage.Popup;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
+
+import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 
 public class CustomCalendar extends Button {
     private static final double GRID_PANE_WIDTH = 400;
@@ -27,8 +34,8 @@ public class CustomCalendar extends Button {
 
     private static Map<Button, Boolean> buttonsCalendar = new LinkedHashMap<>();
 
-    protected static Button startSelectedBtn;
-    protected static Button endSelectedBtn;
+    private static ObjectProperty<Button> startSelectedBtn = new SimpleObjectProperty<>();
+    private static ObjectProperty<Button> endSelectedBtn = new SimpleObjectProperty<>();
 
     private static Map<YearMonth, Calendar> calendarMap = new HashMap<>();
 
@@ -90,6 +97,24 @@ public class CustomCalendar extends Button {
 
         popup.getContent().add(calendarGrid);
         setOnAction(e -> toggleCalendar());
+
+        startSelectedBtn.addListener((ob, oldV, newV) -> {
+            Platform.runLater(() -> {
+                if(oldV != null && oldV.equals(getEndSelectedBtn()))
+                    setText(getTextByUserData(newV) + " - " + getTextByUserData(getEndSelectedBtn()));
+                else if(newV != null && oldV != newV && getEndSelectedBtn() == null) {
+                    setText(getTextByUserData(newV));
+                }
+            });
+        });
+
+        endSelectedBtn.addListener((ob, oldV, newV) -> {
+            Platform.runLater(() -> {
+                if(newV != null && oldV != newV) {
+                    setText(getTextByUserData(getStartSelectedBtn()) + " - " + getTextByUserData(newV));
+                }
+            });
+        });
     }
 
     private void updateMonthButtons() {
@@ -160,5 +185,26 @@ public class CustomCalendar extends Button {
 
     public static Map<YearMonth, Calendar> getCalendarMap() {
         return calendarMap;
+    }
+
+    public static Button getStartSelectedBtn() {
+        return startSelectedBtn.get();
+    }
+
+    public static void setStartSelectedBtn(Button btn) {
+        startSelectedBtn.set(btn);
+    }
+
+    public static Button getEndSelectedBtn() {
+        return endSelectedBtn.get();
+    }
+
+    public static void setEndSelectedBtn(Button btn) {
+        endSelectedBtn.set(btn);
+    }
+
+    private String getTextByUserData(Button button) {
+        return ((LocalDate) button.getUserData()).getDayOfMonth() + " "
+                + getRussianMonthName(((LocalDate) button.getUserData()).getMonthValue()).substring(0, 3).toLowerCase();
     }
 }

@@ -11,11 +11,10 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class Calendar extends TilePane {
-    private Map<Button, Boolean> buttonsCalendar = CustomCalendar.getButtonsCalendar();;
+    private static Map<Button, Boolean> buttonsCalendar = CustomCalendar.getButtonsCalendar();;
     private Calendar() {
         setPadding(new Insets(10));
         setPrefColumns(7);
@@ -64,132 +63,178 @@ public class Calendar extends TilePane {
         // Дни текущего месяца
         int daysInMonth = currentMonth.lengthOfMonth();
         for (int day = 1; day <= daysInMonth; day++) {
+            LocalDate date = currentMonth.atDay(day);
             Button dayButton = new Button(String.valueOf(day));
             dayButton.setMaxWidth(Double.MAX_VALUE);
             dayButton.setAlignment(Pos.CENTER);
-            dayButton.getStyleClass().add("custom-button-double");
-            buttonsCalendar.put(dayButton, false);
-
-            dayButton.setOnAction(e -> {
-                if(CustomCalendar.startSelectedBtn != null && CustomCalendar.startSelectedBtn.equals(dayButton)) {
-                    CustomCalendar.endSelectedBtn = null;
-                    updateStyleRange();
-                    return;
-                }
-
-                if(CustomCalendar.endSelectedBtn != null && CustomCalendar.endSelectedBtn.equals(dayButton)) {
-                    CustomCalendar.startSelectedBtn = CustomCalendar.endSelectedBtn;
-                    CustomCalendar.endSelectedBtn = null;
-                    updateStyleRange();
-                    return;
-                }
-
-                if(CustomCalendar.startSelectedBtn != null && CustomCalendar.endSelectedBtn != null) {
-                    CustomCalendar.startSelectedBtn = null;
-                    CustomCalendar.endSelectedBtn = null;
-                }
-
-                if(CustomCalendar.startSelectedBtn == null) {
-                    CustomCalendar.startSelectedBtn = dayButton;
-                } else {
-                    CustomCalendar.endSelectedBtn = dayButton;
-                }
-
-                updateStyleRange();
+            dayButton.setUserData(date);
+            dayButton.setOnMouseEntered(e -> {
+                setHoverStyle(dayButton);
             });
+            buttonsCalendar.put(dayButton, false);
+            dayButton.setOnAction(e -> handleDateSelection(dayButton));
             getChildren().add(dayButton);
         }
-
-        // Дни следующего месяца (для заполнения сетки 6×7)
-        int totalCells = getChildren().size();
-        int remainingCells = 42 - totalCells; // 42 = 6 строк * 7 колонок
-        for (int i = 1; i <= remainingCells; i++) {
-            Button nextMonthBtn = new Button(String.valueOf(i));
-            nextMonthBtn.setStyle("-fx-text-fill: lightgray;");
-            nextMonthBtn.setDisable(true);
-            nextMonthBtn.getStyleClass().add("custom-button-double");
-            nextMonthBtn.setOnAction(e -> {
-                if(CustomCalendar.startSelectedBtn != null && CustomCalendar.startSelectedBtn.equals(nextMonthBtn)) {
-                    CustomCalendar.endSelectedBtn = null;
-                    updateStyleRange();
-                    return;
-                }
-
-                if(CustomCalendar.endSelectedBtn != null && CustomCalendar.endSelectedBtn.equals(nextMonthBtn)) {
-                    CustomCalendar.startSelectedBtn = CustomCalendar.endSelectedBtn;
-                    CustomCalendar.endSelectedBtn = null;
-                    updateStyleRange();
-                    return;
-                }
-
-                if(CustomCalendar.startSelectedBtn != null && CustomCalendar.endSelectedBtn != null) {
-                    CustomCalendar.startSelectedBtn = null;
-                    CustomCalendar.endSelectedBtn = null;
-                }
-
-                if(CustomCalendar.startSelectedBtn == null) {
-                    CustomCalendar.startSelectedBtn = nextMonthBtn;
-                } else {
-                    CustomCalendar.endSelectedBtn = nextMonthBtn;
-                }
-
-                updateStyleRange();
-            });
-            getChildren().add(nextMonthBtn);
-        }
-    }
-
-    private Button getFirstBtn(Button btn1, Button btn12) {
-        for(Button button : buttonsCalendar.keySet()) {
-            if (button.equals(btn1) || button.equals(btn12))
-                return button;
-        }
-        return btn1;
-    }
-
-    private void toggleButtons() {
-        Button btn = CustomCalendar.startSelectedBtn;
-        CustomCalendar.startSelectedBtn = CustomCalendar.endSelectedBtn;
-        CustomCalendar.endSelectedBtn = btn;
     }
 
     protected static void updateStyleRange() {
-        for (Button btn : CustomCalendar.getButtonsCalendar().keySet()) {
+        if (buttonsCalendar == null) return;
+
+        // Сброс стилей у всех кнопок
+        for (Button btn : buttonsCalendar.keySet()) {
             btn.getStyleClass().clear();
             btn.getStyleClass().add("custom-button-double");
-            CustomCalendar.getButtonsCalendar().put(btn, false);
+            btn.setDisable(false);
+
+            LocalDate date = (LocalDate) btn.getUserData();
+            if(date.isBefore(LocalDate.now().plusDays(1))) {
+                btn.getStyleClass().clear();
+                btn.getStyleClass().add("custom-button-double-disable");
+                btn.setDisable(true);
+            } else {
+                if(CustomCalendar.getStartSelectedBtn() == null && date.isAfter(LocalDate.now().plusYears(1))) {
+                    btn.getStyleClass().clear();
+                    btn.getStyleClass().add("custom-button-double-disable");
+                    btn.setDisable(true);
+                }
+                else if(CustomCalendar.getStartSelectedBtn() != null
+                        && (date.isAfter(((LocalDate) CustomCalendar.getStartSelectedBtn().getUserData())
+                        .plusMonths(1)) || date.isBefore(((LocalDate) CustomCalendar.getStartSelectedBtn().getUserData())
+                        .minusMonths(1)))) {
+                    btn.getStyleClass().clear();
+                    btn.getStyleClass().add("custom-button-double-disable");
+                    btn.setDisable(true);
+                }
+            }
         }
 
-        if (CustomCalendar.startSelectedBtn != null) {
-            CustomCalendar.startSelectedBtn.getStyleClass().clear();
-            CustomCalendar.startSelectedBtn.getStyleClass().add("custom-button-double-select");
-            CustomCalendar.getButtonsCalendar().put(CustomCalendar.startSelectedBtn, true);
+        // Выделение начальной и конечной дат
+        if (CustomCalendar.getStartSelectedBtn() != null) {
+            CustomCalendar.getStartSelectedBtn().getStyleClass().clear();
+            CustomCalendar.getStartSelectedBtn().getStyleClass().add("custom-button-double-select");
         }
-        if (CustomCalendar.endSelectedBtn != null) {
-            CustomCalendar.endSelectedBtn.getStyleClass().clear();
-            CustomCalendar.endSelectedBtn.getStyleClass().add("custom-button-double-select");
-            CustomCalendar.getButtonsCalendar().put(CustomCalendar.endSelectedBtn, true);
+        if (CustomCalendar.getEndSelectedBtn() != null) {
+            CustomCalendar.getEndSelectedBtn().getStyleClass().clear();
+            CustomCalendar.getEndSelectedBtn().getStyleClass().add("custom-button-double-select");
         }
 
-        if (CustomCalendar.startSelectedBtn != null && CustomCalendar.endSelectedBtn != null) {
-            for (Button btn : CustomCalendar.getButtonsCalendar().keySet()) {
+        // Если выбраны обе даты, выделяем промежуток
+        if (CustomCalendar.getStartSelectedBtn() != null && CustomCalendar.getEndSelectedBtn() != null) {
+            // Удаляем старый класс диапазона у всех
+            for (Button btn : buttonsCalendar.keySet()) {
                 btn.getStyleClass().remove("custom-button-double-stack");
             }
 
-            boolean inRange = false;
-            for (Button btn : CustomCalendar.getButtonsCalendar().keySet()) {
-                if (btn.equals(CustomCalendar.startSelectedBtn)) {
-                    inRange = true;
-                    continue;
+            // Собираем все видимые кнопки с датами
+            List<Button> visibleButtons = new ArrayList<>();
+            for (Button btn : buttonsCalendar.keySet()) {
+                if (btn.isVisible() && btn.getUserData() instanceof LocalDate) {
+                    visibleButtons.add(btn);
                 }
-                if (btn.equals(CustomCalendar.endSelectedBtn)) {
+            }
+            // Сортируем по дате
+            visibleButtons.sort(Comparator.comparing(b -> (LocalDate) b.getUserData()));
+
+            LocalDate startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            LocalDate endDate = (LocalDate) CustomCalendar.getEndSelectedBtn().getUserData();
+
+            boolean inRange = false;
+            for (Button btn : visibleButtons) {
+                LocalDate date = (LocalDate) btn.getUserData();
+                if (date.equals(startDate)) {
+                    inRange = true;
+                    continue; // сама start уже имеет select
+                }
+                if (date.equals(endDate)) {
                     inRange = false;
-                    continue; // конечная тоже select
+                    continue; // end тоже select
                 }
                 if (inRange) {
                     btn.getStyleClass().add("custom-button-double-stack");
                 }
             }
         }
+    }
+
+    private void setHoverStyle(Button button) {
+        if(CustomCalendar.getStartSelectedBtn() != null && CustomCalendar.getEndSelectedBtn() == null) {
+            for (Button btn : buttonsCalendar.keySet()) {
+                btn.getStyleClass().remove("custom-button-double-stack");
+            }
+
+            List<Button> visibleButtons = new ArrayList<>();
+            for (Button btn : buttonsCalendar.keySet()) {
+                if (btn.isVisible() && btn.getUserData() instanceof LocalDate) {
+                    visibleButtons.add(btn);
+                }
+            }
+
+            visibleButtons.sort(Comparator.comparing(b -> (LocalDate) b.getUserData()));
+
+            LocalDate startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            LocalDate endDate = (LocalDate) button.getUserData();
+
+            if(endDate.isBefore(startDate)) {
+                startDate = endDate;
+                endDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            }
+
+
+            boolean inRange = false;
+            for (Button btn : visibleButtons) {
+                LocalDate date = (LocalDate) btn.getUserData();
+                if (date.equals(startDate)) {
+                    inRange = true;
+                    continue; // сама start уже имеет select
+                }
+                if (date.equals(endDate)) {
+                    inRange = false;
+                    continue; // end тоже select
+                }
+                if (inRange) {
+                    btn.getStyleClass().add("custom-button-double-stack");
+                }
+            }
+        }
+    }
+
+    private void handleDateSelection(Button clicked) {
+        LocalDate clickedDate = (LocalDate) clicked.getUserData();
+
+        // Если нажата уже выбранная начальная дата
+        if (clicked.equals(CustomCalendar.getStartSelectedBtn())) {
+            CustomCalendar.setEndSelectedBtn(null);
+            updateStyleRange();
+            return;
+        }
+        // Если нажата уже выбранная конечная дата
+        if (clicked.equals(CustomCalendar.getEndSelectedBtn())) {
+            CustomCalendar.setStartSelectedBtn(CustomCalendar.getEndSelectedBtn());
+            CustomCalendar.setEndSelectedBtn(null);
+            updateStyleRange();
+            return;
+        }
+
+        // Если выбраны обе даты — сбрасываем и начинаем новый выбор
+        if (CustomCalendar.getStartSelectedBtn() != null && CustomCalendar.getEndSelectedBtn() != null) {
+            CustomCalendar.setStartSelectedBtn(clicked);
+            CustomCalendar.setEndSelectedBtn(null);
+        }
+        // Если начальная ещё не выбрана
+        else if (CustomCalendar.getStartSelectedBtn() == null) {
+            CustomCalendar.setStartSelectedBtn(clicked);
+        }
+        // Если выбрана только начальная — выбираем конечную и упорядочиваем
+        else {
+            LocalDate startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            if (startDate.isAfter(clickedDate)) {
+                // Меняем местами, чтобы start был раньше
+                CustomCalendar.setEndSelectedBtn(CustomCalendar.getStartSelectedBtn());
+                CustomCalendar.setStartSelectedBtn(clicked);
+            } else {
+                CustomCalendar.setEndSelectedBtn(clicked);
+            }
+        }
+        updateStyleRange();
     }
 }
