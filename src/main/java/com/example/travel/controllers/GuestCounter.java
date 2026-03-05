@@ -36,7 +36,7 @@ public class GuestCounter extends VBox {
         Button minusBtn = createButton("/images/minus.png");
         Button plusBtn = createButton("/images/plus.png");
         countLabel = new Label(String.valueOf(count));
-        countLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
+        countLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
         minusBtn.setOnAction(e -> changeCount(-1));
         plusBtn.setOnAction(e -> changeCount(1));
@@ -59,16 +59,23 @@ public class GuestCounter extends VBox {
 
     private void changeCount(int delta) {
         int newCount = count + delta;
-        if (newCount >= 0) {
-            count = newCount;
-            countLabel.setText(String.valueOf(count));
-            // Уведомляем контроллер
-            if (controller != null) {
-                if (isAdult) {
+        if(isAdult) {
+            if (newCount >= 1 && newCount <= 10) {
+                count = newCount;
+                countLabel.setText(String.valueOf(count));
+                if(newCount == 10)
+                    countLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+                else
+                    countLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+                if (controller != null)
                     controller.onCountChanged(count, controller.childrenCount);
-                } else {
+            }
+        } else {
+            if (newCount >= 0 && newCount <= 5) {
+                count = newCount;
+                countLabel.setText(String.valueOf(count));
+                if (controller != null)
                     controller.onCountChanged(controller.adultsCount, count);
-                }
             }
         }
     }

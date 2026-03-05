@@ -13,6 +13,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
 
+import java.awt.*;
+import java.net.URI;
 import java.util.Objects;
 
 public class HelpFullClass {
@@ -103,5 +105,19 @@ public class HelpFullClass {
                 }
             });
         });
+    }
+
+    public static void openWebPage(String urlAddress) {
+        try {
+            //Создаётся экземпляр рабочего стола
+            Desktop desktop = Desktop.getDesktop();
+            //Проверяем, поддерживает ли ОС пользователя открытие браузера
+            if (desktop.isSupported(Desktop.Action.BROWSE))
+                //Открывает URI в браузере по переданному адресу
+                desktop.browse(new URI(urlAddress));
+        } catch (Exception e) {
+            e.printStackTrace();
+            //showError("Не удалось открыть браузер");
+        }
     }
 }

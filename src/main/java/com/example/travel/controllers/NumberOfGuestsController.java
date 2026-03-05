@@ -1,5 +1,7 @@
 package com.example.travel.controllers;
 
+import com.example.travel.models.Hotel;
+import com.example.travel.services.RoomService;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -7,6 +9,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Popup;
+
+import java.util.function.Predicate;
 
 public class NumberOfGuestsController extends Button {
     int adultsCount = 2;
@@ -116,6 +120,11 @@ public class NumberOfGuestsController extends Button {
 
     private void updateButtonText() {
         int total = adultsCount + childrenCount;
+        Predicate<Hotel> countGuestsPredicate = hotel ->
+                new RoomService().getMaxRoomSleepingPlaces(hotel.getIdHotel()) >= total;
+
+        PopularDestinationsController.filteres.put("CountGuests", countGuestsPredicate);
+        PopularDestinationsController.updatePredicateFilteredHotels();
         if (total == 1)
             setText("1 гость");
         else if (total >= 2 && total <= 4)

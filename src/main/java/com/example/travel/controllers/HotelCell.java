@@ -4,12 +4,15 @@ import com.example.travel.models.Hotel;
 import com.example.travel.models.HotelFeature;
 import com.example.travel.services.HotelFeatureRelationService;
 import com.example.travel.services.RoomService;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -19,7 +22,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 
+import java.util.List;
 import java.util.Objects;
 
 public class HotelCell extends ListCell<Hotel> {
@@ -45,8 +50,9 @@ public class HotelCell extends ListCell<Hotel> {
     private Label countRatingsLB;
     private Label actualMinPriceLB;
     private Text actualPriceLB;
-    private ContainerForFeatures hotelFeaturesContainer;
+    private FlowPane hotelFeaturesContainer;
     private StackPane imagesHotelSP;
+    private double oldWith = 0;
 
     private Hotel currentHotel;
 
@@ -55,6 +61,11 @@ public class HotelCell extends ListCell<Hotel> {
     private final ChangeListener<Number> imageIndexListener;
 
     private Button prevImageBtn, nextImageBtn;
+
+    private List<HotelFeature> allFeatures;
+
+    private int countVisibleFeature = 5;
+    private Label countLabel;
 
     public HotelCell() {
         createCell();
@@ -110,8 +121,10 @@ public class HotelCell extends ListCell<Hotel> {
 
         // Колонка 2 (фичи) – занимает всё доступное место, может расти
         ColumnConstraints col2 = new ColumnConstraints();
+        col2.prefWidthProperty().bind(widthProperty().subtract(COLUMN_IMAGE_WIDTH)
+                .subtract(COLUMN_PRICE_WIDTH).subtract(ROOT_PADDING * 2));
+        col2.setMinWidth(250);
         col2.setHgrow(Priority.ALWAYS);
-        col2.setFillWidth(true);
 
         // Колонка 3 (цена и кнопка) – фиксированная ширина, не растягивается, минимальная ширина = 300
         ColumnConstraints col3 = new ColumnConstraints(COLUMN_PRICE_WIDTH);
@@ -270,17 +283,30 @@ public class HotelCell extends ListCell<Hotel> {
 
         rootGridPane.getChildren().add(stateHotelVB);
 
-        hotelFeaturesContainer = new ContainerForFeatures();
-        GridPane.setValignment(hotelFeaturesContainer, VPos.BOTTOM);
-        hotelFeaturesContainer.setMaxHeight(GRID_HEIGHT / 4 + 10);
-        hotelFeaturesContainer.setPadding(new Insets(10));
-        GridPane.setColumnIndex(hotelFeaturesContainer, 1);
-        GridPane.setRowIndex(hotelFeaturesContainer, 1);
 
-        hotelFeaturesContainer.maxWidthProperty()
-                .bind(widthProperty().subtract(COLUMN_IMAGE_WIDTH).subtract(COLUMN_PRICE_WIDTH).subtract(ROOT_PADDING * 2));
+        StackPane featureWrapper = new StackPane();
+        GridPane.setColumnIndex(featureWrapper, 1);
+        GridPane.setRowIndex(featureWrapper, 1);
+        featureWrapper.prefWidthProperty().bind(col2.prefWidthProperty());
+        rootGridPane.getChildren().add(featureWrapper);
 
-        rootGridPane.getChildren().add(hotelFeaturesContainer);
+        hotelFeaturesContainer = new FlowPane();
+        hotelFeaturesContainer.setHgap(2);
+        hotelFeaturesContainer.setVgap(2);
+        hotelFeaturesContainer.setAlignment(Pos.BOTTOM_LEFT);
+        hotelFeaturesContainer.setPadding(new Insets(0, 0, 10, 10));
+        featureWrapper.getChildren().add(hotelFeaturesContainer);
+
+        hotelFeaturesContainer.widthProperty().addListener((ob, oldV, newV) -> {
+            if (newV.doubleValue() >= oldWith + 60) {
+                oldWith = newV.doubleValue();
+                updateFeatures(true);
+            }
+            else if (newV.doubleValue() <= oldWith - 60) {
+                oldWith = newV.doubleValue();
+                updateFeatures(false);
+            }
+        });
 
         VBox minPriceRoomVB = new VBox(5);
         minPriceRoomVB.setPadding(new Insets(10));
@@ -357,18 +383,16 @@ public class HotelCell extends ListCell<Hotel> {
 
         countRatingsLB.setText("Число оценок: " + hotel.getCountRatings());
 
-
-        hotelFeaturesContainer.clear();
-        for (HotelFeature hotelFeature : new HotelFeatureRelationService().getAllHotelFeatureByHotelId(hotel.getIdHotel())) {
-            Label label = new Label(hotelFeature.getFeatureName());
-            label.getStyleClass().add("feature-label");
-            hotelFeaturesContainer.addNode(label);
-        }
-
         double minPrice = new RoomService().getMinRoomPriceByHotelId(hotel.getIdHotel());
         actualMinPriceLB.setText(String.format("%.2f", minPrice));
         actualPriceLB.setText(String.format("%.2f", minPrice + minPrice * 0.05));
-        //Обработать цену
+
+        allFeatures = new HotelFeatureRelationService().getAllHotelFeatureByHotelId(hotel.getIdHotel())
+                .stream()
+                .sorted((f1, f2) -> Integer.compare(f1.getFeatureName().length(), f2.getFeatureName().length()))
+                .toList();
+
+        updateFeatures();
     }
 
     private void updateVisibleButton() {
@@ -377,5 +401,66 @@ public class HotelCell extends ListCell<Hotel> {
         int max = currentHotel.getHotelPhotos().length - 1;
         prevImageBtn.setVisible(index > 0);
         nextImageBtn.setVisible(index < max);
+    }
+
+    private void updateFeatures() {
+        hotelFeaturesContainer.getChildren().clear();
+
+        List<HotelFeature> features = allFeatures.stream()
+                .limit(countVisibleFeature)
+                .toList();
+
+        if (features.isEmpty()) {
+            return;
+        }
+
+        for (HotelFeature feature : features) {
+            Label label = new Label(feature.getFeatureName());
+            label.getStyleClass().add("feature-label");
+            hotelFeaturesContainer.getChildren().add(label);
+        }
+
+        String countHiddenFeature = String.format("+%d", allFeatures.size() - countVisibleFeature);
+        countLabel = new Label(countHiddenFeature);
+        countLabel.getStyleClass().add("feature-label");
+        countLabel.setVisible(false);
+        hotelFeaturesContainer.getChildren().add(countLabel);
+        countLabel.textProperty().addListener((ob, oldV, newV) -> {
+            if(newV.contains("0") || newV.contains("-"))
+                countLabel.setVisible(false);
+            else
+                countLabel.setVisible(true);
+        });
+    }
+
+    private void updateFeatures(boolean isIncrement) {
+        if(countLabel == null)
+            return;
+
+        if(isIncrement) {
+            if(allFeatures.size() + 1 == hotelFeaturesContainer.getChildren().size())
+                return;
+
+            countVisibleFeature = countVisibleFeature + 1;
+
+            ((Label) hotelFeaturesContainer.getChildren().getLast()).setText(String.format("+%d", allFeatures.size() - countVisibleFeature));
+            Label label;
+            try {
+                if(countLabel.isVisible())
+                    label = new Label(allFeatures.get(hotelFeaturesContainer.getChildren().size() - 1).getFeatureName());
+                else
+                    label = new Label(allFeatures.getLast().getFeatureName());
+                label.getStyleClass().add("feature-label");
+                hotelFeaturesContainer.getChildren().add(hotelFeaturesContainer.getChildren().size() - 1, label);
+            } catch (ArrayIndexOutOfBoundsException e) {
+
+            }
+        } else {
+            if(countVisibleFeature > 5) {
+                countVisibleFeature = countVisibleFeature - 1;
+                ((Label) hotelFeaturesContainer.getChildren().getLast()).setText(String.format("+%d", allFeatures.size() - countVisibleFeature));
+                hotelFeaturesContainer.getChildren().remove(hotelFeaturesContainer.getChildren().size() - 2);
+            }
+        }
     }
 }

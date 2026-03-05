@@ -61,6 +61,11 @@ public class PopularDestinationsController {
 
     protected static ObjectProperty<Predicate<Hotel>> nameHotel = new SimpleObjectProperty<>();
 
+    private static int countPopularDestinations = 0;
+    private static int oldCountChildInRow = 0;
+
+    private static RegistrationWindow registrationWindow;
+
     public enum SortedContext {
         BY_DEFAULT,
         MORE_EXPENSIVE,
@@ -154,6 +159,12 @@ public class PopularDestinationsController {
         profileBtn.setPrefHeight(35);
         AnchorPane.setTopAnchor(profileBtn, 25.0);
         AnchorPane.setRightAnchor(profileBtn, 10.0);
+        profileBtn.setOnAction(e -> {
+            if(registrationWindow == null)
+                registrationWindow = new RegistrationWindow(overlaySP);
+            else
+                registrationWindow.show();
+        });
 
         AnchorPane headerAP = new AnchorPane();
         AnchorPane.setTopAnchor(headerAP, 0.0);
@@ -176,12 +187,20 @@ public class PopularDestinationsController {
         AnchorPane.setTopAnchor(popularDestinationsTP, 150.0);
         AnchorPane.setLeftAnchor(popularDestinationsTP, 15.0);
         AnchorPane.setRightAnchor(popularDestinationsTP, 15.0);
-        AnchorPane.setBottomAnchor(popularDestinationsTP, 15.0);
         popularDestinationsTP.setHgap(30.0);
         popularDestinationsTP.setVgap(30.0);
         popularDestinationsTP.setPrefColumns(5);
         popularDestinationsTP.setPrefTileHeight(290);
         popularDestinationsTP.setPrefTileWidth(270);
+        popularDestinationsTP.widthProperty().addListener((ob, oldV, newV) -> {
+            int countChildInRow = Math.max((newV.intValue() + 30) / 300, 1);
+            if(countChildInRow != oldCountChildInRow) {
+                oldCountChildInRow = countChildInRow;
+                int countRow = (countPopularDestinations % countChildInRow) == 0 ? countPopularDestinations / countChildInRow
+                        : (countPopularDestinations / countChildInRow) + 1;
+                popularDestinationsTP.setPrefHeight(countRow * 320.0);
+            }
+        });
 
         List<Direction> directions = new DirectionService().getAllRow();
         for(Direction direction : directions) {
@@ -192,6 +211,8 @@ public class PopularDestinationsController {
             });
             popularDestinationsTP.getChildren().add(direction1);
         }
+
+        countPopularDestinations = popularDestinationsTP.getChildren().size();
 
         rootAP.getChildren().addAll(headerAP, popularDestinationsLb, popularDestinationsTP);
 
@@ -239,17 +260,13 @@ public class PopularDestinationsController {
                     }
 
                 observableHotels = FXCollections.observableArrayList(hotels);
-                filteres.clear();
                 filteredHotels = new FilteredList<>(observableHotels, p -> true);
-                /*if(CustomCalendar.startDatePredicateProperty().get() == null)
-                    filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get(), nameHotel));
-                else
-                    filteredHotels.predicateProperty().bind(Bindings.createObjectBinding(() -> nameHotel.get()
-                            .and(CustomCalendar.startDatePredicateProperty().get()), nameHotel, CustomCalendar.startDatePredicateProperty()));*/
+
+                popularDestinationsLb.setOpacity(0.0);
+
+                updatePredicateFilteredHotels();
 
                 hotelsLV.setItems(filteredHotels);
-                int cellHeight = 230;
-                hotelsLV.setPrefHeight(hotels.size() * cellHeight); // начальная высота
 
                 if (sortedContext == SortedContext.BY_DEFAULT) {
                     PopularDestinationsController.sortHotels(Comparator.comparingDouble(Hotel::getHotelRating).reversed());
@@ -524,7 +541,7 @@ public class PopularDestinationsController {
     }
 
     public static void updatePredicateFilteredHotels() {
-        if(filteredHotels == null || !hotelsLV.isVisible())
+        if(filteredHotels == null)
             return;
 
         Predicate<Hotel> combined = filteres.values().stream().reduce(Predicate::and).orElse(h -> true);
@@ -532,6 +549,9 @@ public class PopularDestinationsController {
 
         int cellHeight = 230;
         hotelsLV.setPrefHeight(filteredHotels.size() * cellHeight);
-        popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
+        Platform.runLater(() -> {
+            popularDestinationsLb.setOpacity(1.0);
+            popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
+        });
     }
 }
