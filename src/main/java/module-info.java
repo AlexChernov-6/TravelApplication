@@ -13,6 +13,7 @@ module com.example.travel {
     requires org.hibernate.orm.core;
     requires jakarta.persistence;
     requires java.mail;
+    requires java.persistence;
 
     opens com.example.travel to javafx.fxml, javafx.graphics;
     exports com.example.travel.controllers;

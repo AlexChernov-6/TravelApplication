@@ -16,6 +16,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+
         <!--Зависимости для рассылки email-->
         <dependency>
             <groupId>com.sun.mail</groupId>

@@ -1,6 +1,8 @@
 package com.example.travel.controllers;
 
 import com.example.travel.TravelApplication;
+import com.example.travel.models.User;
+import com.example.travel.services.UserService;
 import com.example.travel.util.HelpFullClass;
 import com.example.travel.util.SendingClass;
 import javafx.animation.FadeTransition;
@@ -22,8 +24,14 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static com.example.travel.util.SendingClass.getVerificationCode;
 
 public class RegistrationWindow extends AnchorPane {
     private final StackPane overlaySP;
@@ -160,7 +168,7 @@ public class RegistrationWindow extends AnchorPane {
 
                 startCountdownIfNeeded(60);
 
-                // new Thread(() -> SendingClass.sendPostalDelivery(mail)).start();
+                new Thread(() -> SendingClass.sendPostalDelivery(mail)).start();
             }
         });
 
@@ -263,7 +271,7 @@ public class RegistrationWindow extends AnchorPane {
                 }
                 startCountdownIfNeeded(60);
 
-                // new Thread(() -> SendingClass.sendPostalDelivery(mail)).start();
+                new Thread(() -> SendingClass.sendPostalDelivery(boldEmail.getText())).start();
             }
         });
 
@@ -398,10 +406,26 @@ public class RegistrationWindow extends AnchorPane {
             updating = true;
             try {
                 if(getEnteredCode(enterNumbers).length() == 6) {
-                    System.out.println(getEnteredCode(enterNumbers));
                     for(TextField tf : enterNumbers)
                         tf.setText("");
                     enterNumbers.getFirst().requestFocus();
+
+                    /*if(getVerificationCode(boldEmail.getText()) != null
+                            && getVerificationCode(boldEmail.getText()).trim().equals(getEnteredCode(enterNumbers).trim())) {*/
+                        UserService userService = new UserService();
+                        User existingUser = userService.findByEmail(boldEmail.getText());
+
+                        if (existingUser == null) {
+                            User newUser = new User();
+                            newUser.setUserEmail(boldEmail.getText());
+                            userService.saveRow(newUser);
+                            System.out.println("Новый пользователь создан с email: " + boldEmail.getText());
+                        } else {
+                            System.out.println("Пользователь уже существует: " + existingUser.getUserID());
+                        }
+                    /*} else {
+                        System.out.println("Верификация не пройдена");
+                    }*/
                     return;
                 }
 
