@@ -4,11 +4,14 @@ import java.io.*;
 import java.util.Properties;
 
 public class ConfigManager {
-    private static final String CONFIG_FILE = "config.properties";
+    private static final String CONFIG_DIR = System.getProperty("user.home") + "/.travelapp/";
+    private static final String CONFIG_FILE = CONFIG_DIR + "config.properties";
     private Properties props = new Properties();
 
     public ConfigManager() {
         File file = new File(CONFIG_FILE);
+        // Создаём директорию, если её нет
+        file.getParentFile().mkdirs();
         if (file.exists()) {
             try (InputStream in = new FileInputStream(file)) {
                 props.load(in);
@@ -20,7 +23,7 @@ public class ConfigManager {
 
     public void save() {
         File file = new File(CONFIG_FILE);
-        file.getParentFile().mkdirs();
+        // Родительская директория уже должна существовать (создана в конструкторе)
         try (OutputStream out = new FileOutputStream(file)) {
             props.store(out, "Travel App Configuration");
         } catch (IOException e) {
@@ -56,7 +59,7 @@ public class ConfigManager {
         return Double.parseDouble(get("window.height", "800"));
     }
 
-    public void setWindowHeight(double width) {
-        set("window.height", String.valueOf(width));
+    public void setWindowHeight(double height) {
+        set("window.height", String.valueOf(height));
     }
 }

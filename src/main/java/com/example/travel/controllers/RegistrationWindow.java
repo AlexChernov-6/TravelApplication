@@ -28,10 +28,12 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static com.example.travel.util.HelpFullClass.getNumberMonthWithRussianName;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 import static com.example.travel.util.SendingClass.getVerificationCode;
 
@@ -469,6 +471,7 @@ public class RegistrationWindow extends AnchorPane {
                             newUser.setUserEmail(boldEmail.getText());
                             userService.saveRow(newUser);
                             configManager.setUserId(newUser.getUserID());
+                            configManager.save();
 
                             if(addPersonalInformation == null)
                                 fillInPersonalInformation();
@@ -488,6 +491,9 @@ public class RegistrationWindow extends AnchorPane {
 
                             System.out.println("Новый пользователь создан с email: " + boldEmail.getText());
                         } else {
+                            configManager.setUserId(existingUser.getUserID());
+                            configManager.save();
+
                             creatingAWelcomeWindow();
 
                             PopularDestinationsController.profileBtn.setTextBtn("Профиль");
@@ -683,8 +689,11 @@ public class RegistrationWindow extends AnchorPane {
 
         firstAndSecondNameHB = new HBox(10);
 
-        firstAndSecondNameHB.getChildren().addAll(createHintTextField("Имя", "Укажите имя")
-                , createHintTextField("Фамилия", "Укажите фамилию"));
+        VBox nameTF = createHintTextField("Имя", "Укажите имя");
+
+        VBox firstNameTF = createHintTextField("Фамилия", "Укажите фамилию");
+
+        firstAndSecondNameHB.getChildren().addAll(nameTF, firstNameTF);
 
         patronymicTF = createHintTextField("Отчество", "Укажите отчество");
 
@@ -693,21 +702,39 @@ public class RegistrationWindow extends AnchorPane {
 
         ComboBox<Integer> dayBirthdayCB = new ComboBox<>();
         dayBirthdayCB.setPromptText("День");
-        dayBirthdayCB.getStyleClass().add("text-field-email");
+        dayBirthdayCB.getStyleClass().add("combo-box");
         for(int i = 1; i <= 31; i = i + 1)
             dayBirthdayCB.getItems().add(i);
 
         ComboBox<String> monthBirthdayCB = new ComboBox<>();
         monthBirthdayCB.setPromptText("Месяц");
-        monthBirthdayCB.getStyleClass().add("text-field-email");
+        monthBirthdayCB.getStyleClass().add("combo-box");
         for(int i = 1; i <= 12; i = i + 1)
             monthBirthdayCB.getItems().add(getRussianMonthName(i));
 
         ComboBox<Integer> yearBirthdayCB = new ComboBox<>();
         yearBirthdayCB.setPromptText("Год");
-        yearBirthdayCB.getStyleClass().add("text-field-email");
+        yearBirthdayCB.getStyleClass().add("combo-box");
         for(int i = LocalDate.now().getYear() - 18; i >= LocalDate.now().getYear() - 118; i = i - 1)
             yearBirthdayCB.getItems().add(i);
+        dayBirthdayCB.valueProperty().addListener((ob, oldV, newV) -> {
+            if(newV == null)
+                isEmpty.setValue(checkAllControl());
+            else if(checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB) != null)
+                isEmpty.setValue(false);
+        });
+        monthBirthdayCB.valueProperty().addListener((ob, oldV, newV) -> {
+            if(newV == null)
+                isEmpty.setValue(checkAllControl());
+            else if(checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB) != null)
+                isEmpty.setValue(false);
+        });
+        yearBirthdayCB.valueProperty().addListener((ob, oldV, newV) -> {
+            if(newV == null)
+                isEmpty.setValue(checkAllControl());
+            else if(checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB) != null)
+                isEmpty.setValue(false);
+        });
 
         Button fillItOutLater = new Button("Заполнить позже");
         fillItOutLater.prefWidthProperty().bind(addPersonalInformation.widthProperty());
@@ -718,19 +745,47 @@ public class RegistrationWindow extends AnchorPane {
 
         Button saveNewState = new Button("Сохранить данные");
         saveNewState.prefWidthProperty().bind(addPersonalInformation.widthProperty());
-        saveNewState.getStyleClass().add("fill-later");
+        saveNewState.getStyleClass().add("show-result-button");
         saveNewState.setOnAction(e -> {
+            UserService userService = new UserService();
+            User updatebleUser = userService.getRowById(configManager.getUserId());
+
+            String newName = ((TextField) nameTF.getChildren().stream().filter(child -> child instanceof TextField)
+                    .toList().getFirst()).getText();
+
+            String newFirstName = ((TextField) firstNameTF.getChildren().stream().filter(child -> child instanceof TextField)
+                    .toList().getFirst()).getText();
+
+            String newPatronymicName = ((TextField) patronymicTF.getChildren().stream().filter(child -> child instanceof TextField)
+                    .toList().getFirst()).getText();
+
+            LocalDate newDate = checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
+
+            if(newName != null && !newName.isEmpty())
+                updatebleUser.setUserSecondName(newName);
+
+            if(newFirstName != null && !newFirstName.isEmpty())
+                updatebleUser.setUserFirstName(newFirstName);
+
+            if(newPatronymicName != null && !newPatronymicName.isEmpty())
+                updatebleUser.setUserSurname(newPatronymicName);
+
+            if(newDate != null)
+                updatebleUser.setUserBirthday(newDate.toString());
+
+            userService.updateRow(updatebleUser);
+
             hide();
         });
 
         isEmpty.addListener((ob, oldV, newV) -> {
             if(oldV != newV) {
                 if (newV == true) {
-                    birthdayHB.getChildren().add(fillItOutLater);
-                    birthdayHB.getChildren().remove(saveNewState);
+                    addPersonalInformation.getChildren().add(fillItOutLater);
+                    addPersonalInformation.getChildren().remove(saveNewState);
                 } else {
-                    birthdayHB.getChildren().add(saveNewState);
-                    birthdayHB.getChildren().remove(fillItOutLater);
+                    addPersonalInformation.getChildren().add(saveNewState);
+                    addPersonalInformation.getChildren().remove(fillItOutLater);
                 }
             }
         });
@@ -745,6 +800,7 @@ public class RegistrationWindow extends AnchorPane {
 
     private VBox createHintTextField(String hintText, String promptText) {
         VBox rootVB = new VBox(2);
+        rootVB.setAlignment(Pos.CENTER);
 
         Label hintEmail = new Label(hintText);
         hintEmail.getStyleClass().add("hint-label-registration");
@@ -758,9 +814,11 @@ public class RegistrationWindow extends AnchorPane {
         emailTF.textProperty().addListener((ob, oldV, newV) -> {
             if(newV.isEmpty())
                 isEmpty.setValue(checkAllControl());
+            else
+                isEmpty.setValue(false);
         });
 
-        getChildren().addAll(hintEmail, emailTF);
+        rootVB.getChildren().addAll(hintEmail, emailTF);
 
         return rootVB;
     }
@@ -769,12 +827,12 @@ public class RegistrationWindow extends AnchorPane {
         for(Node node : firstAndSecondNameHB.getChildren()) {
             if(node instanceof VBox)
                 for(Node node1 : ((VBox) node).getChildren())
-                    if(!((TextField) node1).getText().isEmpty())
+                    if(node1 instanceof TextField && !((TextField) node1).getText().isEmpty())
                         return false;
         }
 
         for(Node node : patronymicTF.getChildren()) {
-            if(!((TextField) node).getText().isEmpty())
+            if(node instanceof TextField && !((TextField) node).getText().isEmpty())
                 return false;
         }
 
@@ -785,5 +843,13 @@ public class RegistrationWindow extends AnchorPane {
         }
 
         return true;
+    }
+
+    private LocalDate checkDate(ComboBox<Integer> days, ComboBox<String> month, ComboBox<Integer> year) {
+        try {
+          return LocalDate.of(year.getValue(), getNumberMonthWithRussianName(month.getValue()), days.getValue());
+        } catch (DateTimeException | NullPointerException e) {
+            return null;
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.example.travel.models.Hotel;
 import com.example.travel.services.DirectionService;
 import com.example.travel.services.HotelService;
 import com.example.travel.services.RoomService;
+import com.example.travel.util.ConfigManager;
 import com.example.travel.util.HelpFullClass;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
@@ -31,6 +32,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -67,6 +69,8 @@ public class PopularDestinationsController {
     private static RegistrationWindow registrationWindow;
 
     protected static CustomButton profileBtn;
+
+    private static ConfigManager configManager = new ConfigManager();
 
     public enum SortedContext {
         BY_DEFAULT,
@@ -155,7 +159,7 @@ public class PopularDestinationsController {
 
         profileBtn = new CustomButton(
                 new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/profile.png")))
-                , "Войти");
+                , configManager.getUserId() == 0 ? "Войти" : "Профиль");
         profileBtn.setPrefWidth(60);
         profileBtn.setMaxWidth(60);
         profileBtn.setPrefHeight(35);
