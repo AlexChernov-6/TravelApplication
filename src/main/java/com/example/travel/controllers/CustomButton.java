@@ -8,6 +8,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 
 public class CustomButton extends Button {
+    private Label label;
     public CustomButton(Image image, String text) {
         getStyleClass().add("custom-button");
 
@@ -19,10 +20,14 @@ public class CustomButton extends Button {
         iconImage.setFitWidth(25);
         iconImage.setFitHeight(25);
 
-        Label label = new Label(text);
+        label = new Label(text);
         label.setStyle("-fx-font-size: 10; -fx-text-fill: white;"); // мелкий шрифт для кнопки
 
         rootVB.getChildren().addAll(iconImage, label);
         setGraphic(rootVB);
+    }
+
+    public void setTextBtn(String s) {
+        label.setText(s);
     }
 }

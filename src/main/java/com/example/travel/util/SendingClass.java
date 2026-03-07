@@ -67,6 +67,19 @@ public class SendingClass {
         return sentConfirmationCode;
     }
 
+    public static boolean testSendPostalDelivery(String recipientEmail) {
+        if (!canSendEmail(recipientEmail)) {
+            return false;
+        }
+
+        boolean sentConfirmationCode = testConfirmationEmail(recipientEmail);
+        if (sentConfirmationCode) {
+            lastSentTime.put(recipientEmail, System.currentTimeMillis());
+        }
+        return sentConfirmationCode;
+    }
+
+
     private static boolean ConfirmationEmail(String recipientEmail) {
         try {
             // Создаем сообщение
@@ -91,6 +104,13 @@ public class SendingClass {
             System.err.println(e.getMessage());
             return false;
         }
+    }
+
+    private static boolean testConfirmationEmail(String recipientEmail) {
+        String code = generateVerificationCode();
+        System.out.println(code);
+        verificationCodes.put(recipientEmail, code);
+        return true;
     }
 
     // Генерация 6-значного кода

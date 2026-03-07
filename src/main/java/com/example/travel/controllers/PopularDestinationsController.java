@@ -66,6 +66,8 @@ public class PopularDestinationsController {
 
     private static RegistrationWindow registrationWindow;
 
+    protected static CustomButton profileBtn;
+
     public enum SortedContext {
         BY_DEFAULT,
         MORE_EXPENSIVE,
@@ -151,11 +153,11 @@ public class PopularDestinationsController {
         AnchorPane.setTopAnchor(ordersBtn, 25.0);
         AnchorPane.setRightAnchor(ordersBtn, 70.0);
 
-        CustomButton profileBtn = new CustomButton(
+        profileBtn = new CustomButton(
                 new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/profile.png")))
                 , "Войти");
-        profileBtn.setPrefWidth(50);
-        profileBtn.setMaxWidth(50);
+        profileBtn.setPrefWidth(60);
+        profileBtn.setMaxWidth(60);
         profileBtn.setPrefHeight(35);
         AnchorPane.setTopAnchor(profileBtn, 25.0);
         AnchorPane.setRightAnchor(profileBtn, 10.0);

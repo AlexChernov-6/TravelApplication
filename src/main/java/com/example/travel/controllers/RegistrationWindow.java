@@ -3,34 +3,36 @@ package com.example.travel.controllers;
 import com.example.travel.TravelApplication;
 import com.example.travel.models.User;
 import com.example.travel.services.UserService;
+import com.example.travel.util.ConfigManager;
 import com.example.travel.util.HelpFullClass;
 import com.example.travel.util.SendingClass;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 import static com.example.travel.util.SendingClass.getVerificationCode;
 
 public class RegistrationWindow extends AnchorPane {
@@ -51,7 +53,7 @@ public class RegistrationWindow extends AnchorPane {
 
     private Button getCodeBtn, getCodeBtnAgain;
 
-    private VBox emailVB, confirmEmailVB;
+    private VBox emailVB, confirmEmailVB, addPersonalInformation, patronymicTF;
 
     private List<TextField> enterNumbers;
 
@@ -61,6 +63,16 @@ public class RegistrationWindow extends AnchorPane {
     private int secondsRemaining;
 
     private Text boldEmail;
+
+    private Label errorVerification;
+
+    private AnchorPane welcomeAP;
+
+    private ConfigManager configManager = new ConfigManager();
+
+    private ObjectProperty<Boolean> isEmpty = new SimpleObjectProperty<>();
+
+    private HBox firstAndSecondNameHB, birthdayHB;
 
     public RegistrationWindow(StackPane overlaySP) {
         this.overlaySP = overlaySP;
@@ -72,6 +84,7 @@ public class RegistrationWindow extends AnchorPane {
 
         setMaxHeight(350);
         setMaxWidth(500);
+        setOpacity(0.0);
 
         setStyle("-fx-background-color: white;");
         getStyleClass().add("popup");
@@ -91,16 +104,30 @@ public class RegistrationWindow extends AnchorPane {
         });
 
         overlaySP.getChildren().add(this);
+
+        FadeTransition fadeId = new FadeTransition(Duration.millis(400), this);
+        fadeId.setToValue(1.0);
+        fadeId.play();
+
+        emailTF.requestFocus();
     }
 
     public void show() {
         shadowPane.setVisible(true);
         setVisible(true);
+        FadeTransition fadeId = new FadeTransition(Duration.millis(400), this);
+        fadeId.setToValue(1.0);
+        fadeId.play();
     }
 
     public void hide() {
-        shadowPane.setVisible(false);
-        setVisible(false);
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(300), this);
+        fadeOut.setToValue(0.0);
+        fadeOut.setOnFinished(event -> {
+            shadowPane.setVisible(false);
+            setVisible(false);
+        });
+        fadeOut.play();
     }
 
     public void createEnteredEmail() {
@@ -130,7 +157,13 @@ public class RegistrationWindow extends AnchorPane {
         emailTF.setPromptText("Введите email");
         emailTF.getStyleClass().add("text-field-email");
         emailTF.textProperty().addListener((ob, oldV, newV) -> {
-            hintEmail.setText(validateEmail(newV) != null ? validateEmail(newV) : "Адрес электронной почты");
+            if(validateEmail(newV) != null) {
+                hintEmail.setText(validateEmail(newV));
+                getCodeBtn.setDisable(true);
+            } else {
+                hintEmail.setText("Адрес электронной почты");
+                getCodeBtn.setDisable(false);
+            }
         });
 
         getCodeBtn = new Button("Получить код");
@@ -160,6 +193,7 @@ public class RegistrationWindow extends AnchorPane {
                     emailVB.setManaged(false);
                     emailVB.toBack();
                     confirmEmailVB.setManaged(true);
+                    enterNumbers.getFirst().requestFocus();
                     FadeTransition fadeIn = new FadeTransition(Duration.millis(600), confirmEmailVB);
                     fadeIn.setToValue(1.0);
                     fadeIn.play();
@@ -168,8 +202,14 @@ public class RegistrationWindow extends AnchorPane {
 
                 startCountdownIfNeeded(60);
 
-                new Thread(() -> SendingClass.sendPostalDelivery(mail)).start();
+                //Поменять на реальную отправку
+                new Thread(() -> SendingClass.testSendPostalDelivery(mail)).start();
             }
+        });
+
+        emailVB.setOnKeyPressed(e -> {
+            if(e.getCode() == KeyCode.ENTER)
+                getCodeBtn.fire();
         });
 
         Label userAgreementLB = new Label("Нажимая на кнопку, я соглашаюсь");
@@ -221,11 +261,14 @@ public class RegistrationWindow extends AnchorPane {
                 confirmEmailVB.setManaged(false);
                 emailVB.setManaged(true);
                 emailVB.toFront();
+                emailTF.requestFocus();
                 FadeTransition fadeIn = new FadeTransition(Duration.millis(600), emailVB);
                 fadeIn.setToValue(1.0);
                 fadeIn.play();
             });
             fadeOut.play();
+
+            errorVerification.setVisible(false);
         });
 
         ImageView imageView = new ImageView(
@@ -271,11 +314,20 @@ public class RegistrationWindow extends AnchorPane {
                 }
                 startCountdownIfNeeded(60);
 
-                new Thread(() -> SendingClass.sendPostalDelivery(boldEmail.getText())).start();
+                //Поменять на реальную отправку
+                new Thread(() -> SendingClass.testSendPostalDelivery(boldEmail.getText())).start();
             }
         });
 
-        confirmEmailVB.getChildren().addAll(headerStackPane, hintTextFlow, enteredHB, getCodeBtnAgain);
+        confirmEmailVB.setOnKeyPressed(e -> {
+            if(e.getCode() == KeyCode.ENTER)
+                getCodeBtnAgain.fire();
+        });
+
+        errorVerification = new Label();
+        errorVerification.getStyleClass().add("error-verification-label");
+
+        confirmEmailVB.getChildren().addAll(headerStackPane, hintTextFlow, enteredHB, getCodeBtnAgain, errorVerification);
 
         getChildren().add(confirmEmailVB);
     }
@@ -406,12 +458,9 @@ public class RegistrationWindow extends AnchorPane {
             updating = true;
             try {
                 if(getEnteredCode(enterNumbers).length() == 6) {
-                    for(TextField tf : enterNumbers)
-                        tf.setText("");
-                    enterNumbers.getFirst().requestFocus();
 
-                    /*if(getVerificationCode(boldEmail.getText()) != null
-                            && getVerificationCode(boldEmail.getText()).trim().equals(getEnteredCode(enterNumbers).trim())) {*/
+                    if(getVerificationCode(boldEmail.getText()) != null
+                            && getVerificationCode(boldEmail.getText()).trim().equals(getEnteredCode(enterNumbers).trim())) {
                         UserService userService = new UserService();
                         User existingUser = userService.findByEmail(boldEmail.getText());
 
@@ -419,13 +468,58 @@ public class RegistrationWindow extends AnchorPane {
                             User newUser = new User();
                             newUser.setUserEmail(boldEmail.getText());
                             userService.saveRow(newUser);
+                            configManager.setUserId(newUser.getUserID());
+
+                            if(addPersonalInformation == null)
+                                fillInPersonalInformation();
+
+                            FadeTransition fadeOut = new FadeTransition(Duration.millis(200), confirmEmailVB);
+                            fadeOut.setToValue(0.0);
+                            fadeOut.setOnFinished(event -> {
+                                confirmEmailVB.setManaged(false);
+                                confirmEmailVB.toBack();
+                                addPersonalInformation.setManaged(true);
+                                addPersonalInformation.toFront();
+                                FadeTransition fadeIn = new FadeTransition(Duration.millis(600), addPersonalInformation);
+                                fadeIn.setToValue(1.0);
+                                fadeIn.play();
+                            });
+                            fadeOut.play();
+
                             System.out.println("Новый пользователь создан с email: " + boldEmail.getText());
                         } else {
-                            System.out.println("Пользователь уже существует: " + existingUser.getUserID());
+                            creatingAWelcomeWindow();
+
+                            PopularDestinationsController.profileBtn.setTextBtn("Профиль");
+
+                            FadeTransition fadeOut = new FadeTransition(Duration.millis(200), confirmEmailVB);
+                            fadeOut.setToValue(0.0);
+                            fadeOut.setOnFinished(event -> {
+                                confirmEmailVB.setManaged(false);
+                                confirmEmailVB.toBack();
+                                welcomeAP.setManaged(true);
+                                welcomeAP.toFront();
+                                FadeTransition fadeIn = new FadeTransition(Duration.millis(600), welcomeAP);
+                                fadeIn.setToValue(1.0);
+                                fadeIn.play();
+                                fadeIn.setOnFinished(eventIn -> {
+                                    PauseTransition hideTimer = new PauseTransition(Duration.seconds(3));
+                                    hideTimer.playFromStart();
+                                    hideTimer.setOnFinished(eventTimer -> {
+                                        hide();
+                                    });
+                                });
+                            });
+                            fadeOut.play();
                         }
-                    /*} else {
-                        System.out.println("Верификация не пройдена");
-                    }*/
+                    } else {
+                        errorVerification.setText("Верификация не пройдена: неверный код");
+                        errorVerification.setVisible(true);
+                    }
+
+                    for(TextField tf : enterNumbers)
+                        tf.setText("");
+                    enterNumbers.getFirst().requestFocus();
                     return;
                 }
 
@@ -528,4 +622,168 @@ public class RegistrationWindow extends AnchorPane {
         return sB.toString();
     }
 
+    private void creatingAWelcomeWindow() {
+        welcomeAP = new AnchorPane();
+        AnchorPane.setTopAnchor(welcomeAP, 25.0);
+        AnchorPane.setBottomAnchor(welcomeAP, 25.0);
+        AnchorPane.setLeftAnchor(welcomeAP, 50.0);
+        AnchorPane.setRightAnchor(welcomeAP, 50.0);
+        welcomeAP.setOpacity(0.0);
+        welcomeAP.setManaged(false);
+
+        VBox headerVB = new VBox(5);
+        AnchorPane.setTopAnchor(headerVB, 20.0);
+        AnchorPane.setLeftAnchor(headerVB, 0.0);
+        AnchorPane.setRightAnchor(headerVB, 0.0);
+        AnchorPane.setBottomAnchor(headerVB, 100.0);
+        headerVB.setAlignment(Pos.CENTER);
+        headerVB.getStyleClass().add("welcome-header-text-flow");
+
+        Label firstText = new Label("Вы успешно");
+        firstText.getStyleClass().add("welcome-header");
+
+        Label secondText = new Label("вошли!");
+        secondText.getStyleClass().add("welcome-header");
+
+        headerVB.getChildren().addAll(firstText, secondText);
+
+        TextFlow footTextFlow = new TextFlow();
+        AnchorPane.setLeftAnchor(footTextFlow, 0.0);
+        AnchorPane.setRightAnchor(footTextFlow, 0.0);
+        AnchorPane.setBottomAnchor(footTextFlow, 0.0);
+        footTextFlow.setTextAlignment(TextAlignment.CENTER);
+
+        Text firstTextFoot = new Text("Поздравляем с успешной регистрацией!\n");
+        firstTextFoot.getStyleClass().add("welcome-foot");
+        firstTextFoot.setFill(Color.rgb(130,130,130));
+
+        Text secondTextFoot = new Text("Пора искать идеальный отель для вашего следующего приключения.");
+        secondTextFoot.getStyleClass().add("welcome-foot");
+        secondTextFoot.setFill(Color.rgb(130,130,130));
+
+        footTextFlow.getChildren().addAll(firstTextFoot, secondTextFoot);
+
+        welcomeAP.getChildren().addAll(headerVB, footTextFlow);
+
+        getChildren().add(welcomeAP);
+    }
+
+    private void fillInPersonalInformation() {
+        addPersonalInformation = new VBox(15);
+        AnchorPane.setTopAnchor(addPersonalInformation, 25.0);
+        AnchorPane.setBottomAnchor(addPersonalInformation, 25.0);
+        AnchorPane.setLeftAnchor(addPersonalInformation, 50.0);
+        AnchorPane.setRightAnchor(addPersonalInformation, 50.0);
+        addPersonalInformation.setOpacity(0.0);
+        addPersonalInformation.setManaged(false);
+        addPersonalInformation.setAlignment(Pos.TOP_CENTER);
+
+        Label headerLB = new Label("Добавить личные данные");
+        headerLB.getStyleClass().add("filters-label");
+
+        firstAndSecondNameHB = new HBox(10);
+
+        firstAndSecondNameHB.getChildren().addAll(createHintTextField("Имя", "Укажите имя")
+                , createHintTextField("Фамилия", "Укажите фамилию"));
+
+        patronymicTF = createHintTextField("Отчество", "Укажите отчество");
+
+        birthdayHB = new HBox(10);
+        birthdayHB.setAlignment(Pos.CENTER);
+
+        ComboBox<Integer> dayBirthdayCB = new ComboBox<>();
+        dayBirthdayCB.setPromptText("День");
+        dayBirthdayCB.getStyleClass().add("text-field-email");
+        for(int i = 1; i <= 31; i = i + 1)
+            dayBirthdayCB.getItems().add(i);
+
+        ComboBox<String> monthBirthdayCB = new ComboBox<>();
+        monthBirthdayCB.setPromptText("Месяц");
+        monthBirthdayCB.getStyleClass().add("text-field-email");
+        for(int i = 1; i <= 12; i = i + 1)
+            monthBirthdayCB.getItems().add(getRussianMonthName(i));
+
+        ComboBox<Integer> yearBirthdayCB = new ComboBox<>();
+        yearBirthdayCB.setPromptText("Год");
+        yearBirthdayCB.getStyleClass().add("text-field-email");
+        for(int i = LocalDate.now().getYear() - 18; i >= LocalDate.now().getYear() - 118; i = i - 1)
+            yearBirthdayCB.getItems().add(i);
+
+        Button fillItOutLater = new Button("Заполнить позже");
+        fillItOutLater.prefWidthProperty().bind(addPersonalInformation.widthProperty());
+        fillItOutLater.getStyleClass().add("fill-later");
+        fillItOutLater.setOnAction(e -> {
+            hide();
+        });
+
+        Button saveNewState = new Button("Сохранить данные");
+        saveNewState.prefWidthProperty().bind(addPersonalInformation.widthProperty());
+        saveNewState.getStyleClass().add("fill-later");
+        saveNewState.setOnAction(e -> {
+            hide();
+        });
+
+        isEmpty.addListener((ob, oldV, newV) -> {
+            if(oldV != newV) {
+                if (newV == true) {
+                    birthdayHB.getChildren().add(fillItOutLater);
+                    birthdayHB.getChildren().remove(saveNewState);
+                } else {
+                    birthdayHB.getChildren().add(saveNewState);
+                    birthdayHB.getChildren().remove(fillItOutLater);
+                }
+            }
+        });
+
+        birthdayHB.getChildren().addAll(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
+
+        addPersonalInformation.getChildren().addAll(headerLB, firstAndSecondNameHB
+                , patronymicTF, birthdayHB, fillItOutLater);
+
+        getChildren().add(addPersonalInformation);
+    }
+
+    private VBox createHintTextField(String hintText, String promptText) {
+        VBox rootVB = new VBox(2);
+
+        Label hintEmail = new Label(hintText);
+        hintEmail.getStyleClass().add("hint-label-registration");
+        hintEmail.setAlignment(Pos.BOTTOM_LEFT);
+        hintEmail.prefWidthProperty().bind(widthProperty().subtract(10));
+
+        TextField emailTF = new TextField();
+        emailTF.setPromptText(promptText);
+        emailTF.getStyleClass().add("text-field-email");
+
+        emailTF.textProperty().addListener((ob, oldV, newV) -> {
+            if(newV.isEmpty())
+                isEmpty.setValue(checkAllControl());
+        });
+
+        getChildren().addAll(hintEmail, emailTF);
+
+        return rootVB;
+    }
+
+    private boolean checkAllControl() {
+        for(Node node : firstAndSecondNameHB.getChildren()) {
+            if(node instanceof VBox)
+                for(Node node1 : ((VBox) node).getChildren())
+                    if(!((TextField) node1).getText().isEmpty())
+                        return false;
+        }
+
+        for(Node node : patronymicTF.getChildren()) {
+            if(!((TextField) node).getText().isEmpty())
+                return false;
+        }
+
+        for(Node node : birthdayHB.getChildren()) {
+            if(node instanceof ComboBox<?>)
+                if(((ComboBox<?>) node).getValue() != null)
+                    return false;
+        }
+
+        return true;
+    }
 }
