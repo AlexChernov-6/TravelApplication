@@ -48,7 +48,7 @@ public class ConfigManager {
     }
 
     public double getWindowWidth() {
-        return Double.parseDouble(get("window.width", "800"));
+        return Double.parseDouble(get("window.width", "920"));
     }
 
     public void setWindowWidth(double width) {
@@ -56,7 +56,7 @@ public class ConfigManager {
     }
 
     public double getWindowHeight() {
-        return Double.parseDouble(get("window.height", "800"));
+        return Double.parseDouble(get("window.height", "600"));
     }
 
     public void setWindowHeight(double height) {

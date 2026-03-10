@@ -19,6 +19,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -32,13 +33,13 @@ public class HotelCell extends ListCell<Hotel> {
     private static final double COLUMN_PRICE_WIDTH = 300;
     private static final double GRID_HEIGHT = 200;
     private static final double ROOT_PADDING = 10;
-    private static final Image STAR_IMAGE =
+    public static final Image STAR_IMAGE =
             new Image(Objects.requireNonNull(HotelCell.class.getResourceAsStream("/images/star.png")));
-    private static final Image DISCOUND_IMAGE =
+    public static final Image DISCOUND_IMAGE =
             new Image(Objects.requireNonNull(HotelCell.class.getResourceAsStream("/images/discount.png")));
-    private static final Image RUBLE_IMAGE =
+    public static final Image RUBLE_IMAGE =
             new Image(Objects.requireNonNull(HotelCell.class.getResourceAsStream("/images/ruble.png")));
-    private static final Image RUBLE_SMALL_IMAGE =
+    public static final Image RUBLE_SMALL_IMAGE =
             new Image(Objects.requireNonNull(HotelCell.class.getResourceAsStream("/images/ruble-small.png")));
 
     private GridPane rootGridPane;
@@ -111,6 +112,7 @@ public class HotelCell extends ListCell<Hotel> {
         rootVB.setPadding(new Insets(ROOT_PADDING));
 
         rootGridPane = new GridPane();
+
         rootGridPane.getStyleClass().add("root-grid-pane");
         rootGridPane.setPrefHeight(GRID_HEIGHT);
         rootGridPane.setMaxHeight(GRID_HEIGHT);
@@ -271,6 +273,17 @@ public class HotelCell extends ListCell<Hotel> {
         ratingLB.getStyleClass().add("hotel-rating-label");
         ratingLB.setAlignment(Pos.CENTER);
         ratingLB.setPadding(new Insets(2, 10, 2, 10));
+        ratingLB.textProperty().addListener((ob, oldV, newV) -> {
+            double newValue = Double.parseDouble(newV.replace(",", "."));
+            if (newValue >= 4)
+                ratingLB.setStyle("-fx-background-color: #0bb527;");
+            else if (newValue < 4 && newValue >= 3)
+                ratingLB.setStyle("-fx-background-color: #7fb50b;");
+            else if (newValue < 3 && newValue >= 2)
+                ratingLB.setStyle("-fx-background-color: #cbdb16;");
+            else
+                ratingLB.setStyle("-fx-background-color: #b00000;");
+        });
 
         countRatingsLB = new Label("Число оценок: ");
         countRatingsLB.setAlignment(Pos.CENTER_LEFT);
@@ -363,6 +376,15 @@ public class HotelCell extends ListCell<Hotel> {
 
         rootGridPane.getChildren().add(selectBtn);
 
+        rootGridPane.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                HotelWindow hotelWindow = new HotelWindow(currentHotel);//Нормализовать
+                hotelWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
+                hotelWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
+                PopularDestinationsController.getOverlaySP().getChildren().add(hotelWindow);
+            }
+        });
+
         rootVB.getChildren().add(rootGridPane);
     }
 
@@ -370,16 +392,7 @@ public class HotelCell extends ListCell<Hotel> {
         imageViewHotel.setImage(hotel.getImageByNumber(currentVisibleImage));
         hotelNameLB.setText(hotel.getHotelName());
         hotelCountStar.setText(" " + hotel.getCountStars());
-        double hotelRating = hotel.getHotelRating();
-        ratingLB.setText(String.format("%.1f", hotelRating));
-        if (hotelRating >= 4)
-            ratingLB.setStyle("-fx-background-color: #0bb527;");
-        else if (hotelRating < 4 && hotelRating >= 3)
-            ratingLB.setStyle("-fx-background-color: #7fb50b;");
-        else if (hotelRating < 3 && hotelRating >= 2)
-            ratingLB.setStyle("-fx-background-color: #cbdb16;");
-        else
-            ratingLB.setStyle("-fx-background-color: #b00000;");
+        ratingLB.setText(String.format("%.1f", hotel.getHotelRating()));
 
         countRatingsLB.setText("Число оценок: " + hotel.getCountRatings());
 
@@ -426,7 +439,7 @@ public class HotelCell extends ListCell<Hotel> {
         countLabel.setVisible(false);
         hotelFeaturesContainer.getChildren().add(countLabel);
         countLabel.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.contains("0") || newV.contains("-"))
+            if(Integer.parseInt(newV) <= 0)
                 countLabel.setVisible(false);
             else
                 countLabel.setVisible(true);

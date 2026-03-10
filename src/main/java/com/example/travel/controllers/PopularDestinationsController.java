@@ -315,6 +315,7 @@ public class PopularDestinationsController {
 
     private static void createListView() {
         hotelsLV = new ListView<>();
+        hotelsLV.setSelectionModel(null);
         hotelsLV.setCellFactory(param -> new HotelCell());
         hotelsLV.getStyleClass().add("list-view");
         hotelsLV.addEventFilter(ScrollEvent.SCROLL, event -> {
@@ -559,5 +560,9 @@ public class PopularDestinationsController {
             popularDestinationsLb.setOpacity(1.0);
             popularDestinationsLb.setText("Найдено отелей: " + filteredHotels.size());
         });
+    }
+
+    public static StackPane getOverlaySP() {
+        return overlaySP;
     }
 }

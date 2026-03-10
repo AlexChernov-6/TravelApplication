@@ -655,3 +655,35 @@
     -fx-border-color: #da4df0;
     -fx-border-width: 1.5 0 1.5 1.5;
 }
+
+.set-hand-cursor:hover {
+    -fx-cursor: hand;
+}
+
+.count-image-label {
+    -fx-font-size: 14;
+    -fx-background-radius: 6;
+    -fx-border-width: 0;
+    -fx-background-color: rgba(220, 220, 220);
+}
+
+.images-list-view {
+    -fx-background-insets: 0;
+    -fx-background-color: transparent;
+    -fx-vbar-policy: never;
+}
+
+.images-list-view .list-cell {
+    -fx-padding: 0 2.5;
+}
+
+.images-list-view .scroll-bar:vertical,
+.images-list-view .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+}
+
+.images-list-view .scroll-bar:vertical {
+    -fx-vbar-policy: never;
+}
