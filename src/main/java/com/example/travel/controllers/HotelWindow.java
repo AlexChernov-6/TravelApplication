@@ -62,6 +62,31 @@ public class HotelWindow extends VBox {
     private void createHotelInformation() {
         AnchorPane rootAP = new AnchorPane();
 
+        StackPane overSP = PopularDestinationsController.getOverlaySP();
+        double startWidth = overSP.getWidth();
+        double startHeight = overSP.getHeight() - 100;
+
+        rootAP.setPrefWidth(startWidth);
+        rootAP.setMinWidth(startWidth);
+        rootAP.setMaxWidth(startWidth);
+        rootAP.setPrefWidth(startHeight);
+        rootAP.setMinWidth(startHeight);
+        rootAP.setMaxWidth(startHeight);
+
+        overSP.widthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue();
+            rootAP.setPrefWidth(newVal);
+            rootAP.setMinWidth(newVal);
+            rootAP.setMaxWidth(newVal);
+        });
+
+        overSP.heightProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue() - 100;
+            rootAP.setPrefHeight(newVal);
+            rootAP.setMinHeight(newVal);
+            rootAP.setMaxHeight(newVal);
+        });
+
         GridPane hotelInfoHeader = new GridPane();
         hotelInfoHeader.setPadding(new Insets(20, 15, 15, 15));
         hotelInfoHeader.setPrefHeight(100);
@@ -198,7 +223,7 @@ public class HotelWindow extends VBox {
         GridPane.setColumnIndex(chooseRoom, 2);
         GridPane.setRowIndex(chooseRoom, 0);
         GridPane.setRowSpan(chooseRoom, 2);
-        GridPane.setHgrow(chooseRoom, Priority.ALWAYS);
+        chooseRoom.setPrefWidth(300);
         chooseRoom.getStyleClass().add("show-result-button");
         chooseRoom.setOnAction(e -> {
             //Обработать нажатие кнопки

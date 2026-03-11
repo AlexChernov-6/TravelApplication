@@ -2,6 +2,7 @@ package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
 import com.example.travel.services.DirectionService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -28,7 +29,7 @@ public class ViewingImages extends GridPane {
         this.hotel = hotel;
         maxIndImg = hotel.getHotelPhotos().length;
 
-        setAlignment(Pos.CENTER);
+        setAlignment(Pos.TOP_CENTER);
 
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setPercentWidth(50);
@@ -47,7 +48,6 @@ public class ViewingImages extends GridPane {
         );
 
         ImageView firstIV = new ImageView(hotel.getImageByNumber(0));
-        firstIV.setFitHeight(400);
         GridPane.setColumnIndex(firstIV, 0);
         GridPane.setRowIndex(firstIV, 0);
         GridPane.setRowSpan(firstIV, 2);
@@ -56,7 +56,6 @@ public class ViewingImages extends GridPane {
         firstIV.setPreserveRatio(true);
 
         ImageView secondIV = new ImageView(hotel.getImageByNumber(1));
-        secondIV.setFitHeight(200);
         GridPane.setColumnIndex(secondIV, 1);
         GridPane.setRowIndex(secondIV, 0);
         addActionIV(secondIV);
@@ -64,7 +63,6 @@ public class ViewingImages extends GridPane {
         secondIV.setPreserveRatio(true);
 
         ImageView thirdIV = new ImageView(hotel.getImageByNumber(2));
-        thirdIV.setFitHeight(200);
         GridPane.setColumnIndex(thirdIV, 1);
         GridPane.setRowIndex(thirdIV, 1);
         addActionIV(thirdIV);
@@ -72,7 +70,6 @@ public class ViewingImages extends GridPane {
         thirdIV.setPreserveRatio(true);
 
         ImageView fourthIV = new ImageView(hotel.getImageByNumber(3));
-        fourthIV.setFitHeight(200);
         GridPane.setColumnIndex(fourthIV, 2);
         GridPane.setRowIndex(fourthIV, 0);
         addActionIV(fourthIV);
@@ -84,16 +81,33 @@ public class ViewingImages extends GridPane {
         GridPane.setRowIndex(fifthIStackPane, 1);
 
         ImageView fifthIV = new ImageView(hotel.getImageByNumber(4));
-        fifthIV.setFitHeight(200);
         addActionIV(fifthIV);
         fifthIV.getStyleClass().add("set-hand-cursor");
         fifthIV.setPreserveRatio(true);
+
+        widthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue();
+            if(newVal >= 600) {
+                firstIV.setFitWidth(newVal / 2);
+                secondIV.setFitWidth(newVal / 4);
+                thirdIV.setFitWidth(newVal / 4);
+                fourthIV.setFitWidth(newVal / 4);
+                fifthIV.setFitWidth(newVal / 4);
+            }
+        });
+
+        fifthIV.fitWidthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue();
+            fifthIStackPane.setPrefWidth(newVal);
+            fifthIStackPane.setMinWidth(newVal);
+            fifthIStackPane.setMaxWidth(newVal);
+        });
 
         Pane shadowPane = new Pane();
         shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
 
         Label countHiddenImage = new Label("+" + (maxIndImg - 5));
-        countHiddenImage.setStyle("-fx-text-fill: white; -fx-font-size: 25;");
+        countHiddenImage.setStyle("-fx-text-fill: white; -fx-font-size: 25; -fx-font-weight: bold;");
 
         fifthIStackPane.getChildren().addAll(fifthIV, shadowPane, countHiddenImage);
 
