@@ -3,6 +3,8 @@ package com.example.travel.controllers;
 import com.example.travel.models.Hotel;
 import com.example.travel.services.DirectionService;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -11,6 +13,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
@@ -22,8 +26,10 @@ public class ViewingImages extends GridPane {
     private final Hotel hotel;
     private AnchorPane anchorPane;
     private Label countImageLB;
-    private int maxIndImg = 1;
+    private int maxIndImg;
     private Pane shadowPane;
+    private ListView<ImageView> allImages;
+    private ImageView selectedIV;
 
     public ViewingImages(Hotel hotel) {
         this.hotel = hotel;
@@ -51,28 +57,64 @@ public class ViewingImages extends GridPane {
         GridPane.setColumnIndex(firstIV, 0);
         GridPane.setRowIndex(firstIV, 0);
         GridPane.setRowSpan(firstIV, 2);
-        addActionIV(firstIV);
+        firstIV.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                hotel.setCurrentImageIndex(0);
+                if(anchorPane == null)
+                    createViewingImages();
+                else
+                    updateSelectedImage();
+                show();
+            }
+        });
         firstIV.getStyleClass().add("set-hand-cursor");
         firstIV.setPreserveRatio(true);
 
         ImageView secondIV = new ImageView(hotel.getImageByNumber(1));
         GridPane.setColumnIndex(secondIV, 1);
         GridPane.setRowIndex(secondIV, 0);
-        addActionIV(secondIV);
+        secondIV.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                hotel.setCurrentImageIndex(1);
+                if(anchorPane == null)
+                    createViewingImages();
+                else
+                    updateSelectedImage();
+                show();
+            }
+        });
         secondIV.getStyleClass().add("set-hand-cursor");
         secondIV.setPreserveRatio(true);
 
         ImageView thirdIV = new ImageView(hotel.getImageByNumber(2));
         GridPane.setColumnIndex(thirdIV, 1);
         GridPane.setRowIndex(thirdIV, 1);
-        addActionIV(thirdIV);
+        thirdIV.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                hotel.setCurrentImageIndex(2);
+                if(anchorPane == null)
+                    createViewingImages();
+                else
+                    updateSelectedImage();
+                show();
+            }
+        });
         thirdIV.getStyleClass().add("set-hand-cursor");
         thirdIV.setPreserveRatio(true);
 
         ImageView fourthIV = new ImageView(hotel.getImageByNumber(3));
         GridPane.setColumnIndex(fourthIV, 2);
         GridPane.setRowIndex(fourthIV, 0);
-        addActionIV(fourthIV);
+        fourthIV.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                hotel.setCurrentImageIndex(3);
+                if(anchorPane == null)
+                    createViewingImages();
+                else
+                    updateSelectedImage();
+                show();
+            }
+        });
         fourthIV.getStyleClass().add("set-hand-cursor");
         fourthIV.setPreserveRatio(true);
 
@@ -81,7 +123,16 @@ public class ViewingImages extends GridPane {
         GridPane.setRowIndex(fifthIStackPane, 1);
 
         ImageView fifthIV = new ImageView(hotel.getImageByNumber(4));
-        addActionIV(fifthIV);
+        fifthIV.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                hotel.setCurrentImageIndex(4);
+                if(anchorPane == null)
+                    createViewingImages();
+                else
+                    updateSelectedImage();
+                show();
+            }
+        });
         fifthIV.getStyleClass().add("set-hand-cursor");
         fifthIV.setPreserveRatio(true);
 
@@ -114,20 +165,9 @@ public class ViewingImages extends GridPane {
         getChildren().addAll(firstIV, secondIV, thirdIV, fourthIV, fifthIStackPane);
     }
 
-    private void addActionIV(ImageView imageView) {
-        imageView.setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
-                if(anchorPane == null)
-                    createViewingImages(imageView.getImage());
-
-                show();
-            }
-        });
-    }
-
-    private void createViewingImages(Image image) {
+    private void createViewingImages() {
         shadowPane = new Pane();
-        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
+        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
         overSP.getChildren().add(shadowPane);
 
         anchorPane = new AnchorPane();
@@ -182,7 +222,7 @@ public class ViewingImages extends GridPane {
         AnchorPane.setRightAnchor(stackPane, 15.0);
         AnchorPane.setBottomAnchor(stackPane, 150.0);
 
-        ImageView selectedIV = new ImageView(image);
+        selectedIV = new ImageView(hotel.getImageByNumber(hotel.getCurrentImageIndex()));
         selectedIV.fitHeightProperty().bind(stackPane.heightProperty());
         selectedIV.setPreserveRatio(true);
 
@@ -193,11 +233,14 @@ public class ViewingImages extends GridPane {
         StackPane.setMargin(prevImageBtn, new Insets(0, 0, 0, 10));
         StackPane.setAlignment(prevImageBtn, Pos.CENTER_LEFT);
         prevImageBtn.setOnAction(e -> {
-            if (hotel != null) {
-                int newIndex = hotel.getCurrentImageIndex() - 1;
-                hotel.setCurrentImageIndex(newIndex);
-                countImageLB.setText(hotel.getCurrentImageIndex() + 1 + "/" + maxIndImg);
-            }
+            if(hotel.getCurrentImageIndex() - 1 >= 0) {
+                int newV = hotel.getCurrentImageIndex() - 1;
+                hotel.setCurrentImageIndex(newV);
+            } else
+                hotel.setCurrentImageIndex(maxIndImg - 1);
+            updateSelectedImage();
+
+            allImages.requestFocus();
         });
 
         prevImageBtn.setOnMouseEntered(event -> {
@@ -223,11 +266,13 @@ public class ViewingImages extends GridPane {
         StackPane.setMargin(nextImageBtn, new Insets(0, 10, 0, 0));
         StackPane.setAlignment(nextImageBtn, Pos.CENTER_RIGHT);
         nextImageBtn.setOnAction(e -> {
-            if (hotel != null) {
-                int newIndex = hotel.getCurrentImageIndex() + 1;
-                hotel.setCurrentImageIndex(newIndex);
-                countImageLB.setText(hotel.getCurrentImageIndex() + 1 + "/" + maxIndImg);
-            }
+            if(hotel.getCurrentImageIndex() + 1 < maxIndImg)
+                hotel.setCurrentImageIndex(hotel.getCurrentImageIndex() + 1);
+            else
+                hotel.setCurrentImageIndex(0);
+            updateSelectedImage();
+
+            allImages.requestFocus();
         });
 
         nextImageBtn.setOnMouseEntered(event -> {
@@ -264,21 +309,37 @@ public class ViewingImages extends GridPane {
 
         anchorPane.getChildren().add(countImageHB);
 
-        ListView<ImageView> allImages = new ListView<>();
+        allImages = new ListView<>();
         AnchorPane.setBottomAnchor(allImages, 10.0);
         AnchorPane.setLeftAnchor(allImages, 15.0);
         AnchorPane.setRightAnchor(allImages, 15.0);
         allImages.setFixedCellSize(100);
-        allImages.setSelectionModel(null);
         allImages.getStyleClass().add("images-list-view");
         allImages.setOrientation(Orientation.HORIZONTAL);
         allImages.setPrefHeight(100);
+        allImages.getSelectionModel().selectedIndexProperty().addListener((ob, oldV, newV) -> {
+            hotel.setCurrentImageIndex(newV.intValue());
+            updateSelectedImage();
+        });
         for(int i=0; i<maxIndImg; i=i+1) {
             ImageView imageView = new ImageView(hotel.getImageByNumber(i));
             imageView.setFitHeight(100);
-            imageView.setFitHeight(150);
+            imageView.setPreserveRatio(true);
             allImages.getItems().add(imageView);
         }
+
+        allImages.setOnKeyPressed(e -> {
+            if(e.getCode() == KeyCode.RIGHT || e.getCode() == KeyCode.UP)
+                nextImageBtn.fire();
+            if(e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.DOWN)
+                prevImageBtn.fire();
+            if(e.getCode() == KeyCode.ESCAPE)
+                closeBtn.fire();
+        });
+
+        Platform.runLater(() -> {
+            allImages.requestFocus();
+        });
 
         anchorPane.getChildren().add(allImages);
 
@@ -288,10 +349,19 @@ public class ViewingImages extends GridPane {
     public void show() {
         shadowPane.setVisible(true);
         anchorPane.setVisible(true);
+        Platform.runLater(() -> {
+            allImages.requestFocus();
+        });
     }
 
     public void hide() {
         shadowPane.setVisible(false);
         anchorPane.setVisible(false);
+    }
+
+    private void updateSelectedImage() {
+        selectedIV.setImage(hotel.getImageByNumber(hotel.getCurrentImageIndex()));
+        allImages.scrollTo(hotel.getCurrentImageIndex());
+        countImageLB.setText(hotel.getCurrentImageIndex() + 1 + "/" + maxIndImg);
     }
 }

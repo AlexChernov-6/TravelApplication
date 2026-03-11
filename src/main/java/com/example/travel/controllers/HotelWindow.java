@@ -2,6 +2,7 @@ package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
 import com.example.travel.services.RoomService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -85,6 +86,18 @@ public class HotelWindow extends VBox {
             rootAP.setPrefHeight(newVal);
             rootAP.setMinHeight(newVal);
             rootAP.setMaxHeight(newVal);
+        });
+
+        Platform.runLater(() -> {
+            double newWidth = overSP.getWidth();
+            rootAP.setPrefWidth(newWidth);
+            rootAP.setMinWidth(newWidth);
+            rootAP.setMaxWidth(newWidth);
+
+            double newHeight = overSP.getHeight() - 100;
+            rootAP.setPrefHeight(newHeight);
+            rootAP.setMinHeight(newHeight);
+            rootAP.setMaxHeight(newHeight);
         });
 
         GridPane hotelInfoHeader = new GridPane();
