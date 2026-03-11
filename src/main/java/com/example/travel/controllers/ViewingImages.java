@@ -47,47 +47,47 @@ public class ViewingImages extends GridPane {
         );
 
         ImageView firstIV = new ImageView(hotel.getImageByNumber(0));
-        firstIV.fitWidthProperty().bind(col1.percentWidthProperty());
-        firstIV.fitHeightProperty().bind(heightProperty());
+        firstIV.setFitHeight(400);
         GridPane.setColumnIndex(firstIV, 0);
         GridPane.setRowIndex(firstIV, 0);
         GridPane.setRowSpan(firstIV, 2);
         addActionIV(firstIV);
         firstIV.getStyleClass().add("set-hand-cursor");
+        firstIV.setPreserveRatio(true);
 
         ImageView secondIV = new ImageView(hotel.getImageByNumber(1));
-        secondIV.fitWidthProperty().bind(col2.percentWidthProperty().divide(2));
-        secondIV.fitHeightProperty().bind(heightProperty().divide(2));
+        secondIV.setFitHeight(200);
         GridPane.setColumnIndex(secondIV, 1);
         GridPane.setRowIndex(secondIV, 0);
         addActionIV(secondIV);
         secondIV.getStyleClass().add("set-hand-cursor");
+        secondIV.setPreserveRatio(true);
 
         ImageView thirdIV = new ImageView(hotel.getImageByNumber(2));
-        thirdIV.fitWidthProperty().bind(col2.percentWidthProperty().divide(2));
-        thirdIV.fitHeightProperty().bind(heightProperty().divide(2));
+        thirdIV.setFitHeight(200);
         GridPane.setColumnIndex(thirdIV, 1);
         GridPane.setRowIndex(thirdIV, 1);
         addActionIV(thirdIV);
         thirdIV.getStyleClass().add("set-hand-cursor");
+        thirdIV.setPreserveRatio(true);
 
         ImageView fourthIV = new ImageView(hotel.getImageByNumber(3));
-        fourthIV.fitWidthProperty().bind(col3.percentWidthProperty().divide(2));
-        fourthIV.fitHeightProperty().bind(heightProperty().divide(2));
+        fourthIV.setFitHeight(200);
         GridPane.setColumnIndex(fourthIV, 2);
         GridPane.setRowIndex(fourthIV, 0);
         addActionIV(fourthIV);
         fourthIV.getStyleClass().add("set-hand-cursor");
+        fourthIV.setPreserveRatio(true);
 
         StackPane fifthIStackPane = new StackPane();
         GridPane.setColumnIndex(fifthIStackPane, 2);
         GridPane.setRowIndex(fifthIStackPane, 1);
 
         ImageView fifthIV = new ImageView(hotel.getImageByNumber(4));
-        fifthIV.fitWidthProperty().bind(fifthIStackPane.widthProperty());
-        fifthIV.fitHeightProperty().bind(fifthIStackPane.heightProperty());
+        fifthIV.setFitHeight(200);
         addActionIV(fifthIV);
         fifthIV.getStyleClass().add("set-hand-cursor");
+        fifthIV.setPreserveRatio(true);
 
         Pane shadowPane = new Pane();
         shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
@@ -117,6 +117,30 @@ public class ViewingImages extends GridPane {
         overSP.getChildren().add(shadowPane);
 
         anchorPane = new AnchorPane();
+
+        overSP.heightProperty().addListener((ob, oldV, newV) -> {
+            if(newV.doubleValue() >= 400) {
+                anchorPane.setPrefHeight(newV.doubleValue());
+                anchorPane.setMaxHeight(newV.doubleValue());
+                anchorPane.setMinHeight(newV.doubleValue());
+            } else {
+                anchorPane.setPrefHeight(400);
+                anchorPane.setMaxHeight(400);
+                anchorPane.setMinHeight(400);
+            }
+        });
+
+        overSP.widthProperty().addListener((ob, oldV, newV) -> {
+            if(newV.doubleValue() >= 400) {
+                anchorPane.setPrefWidth(newV.doubleValue());
+                anchorPane.setMaxWidth(newV.doubleValue());
+                anchorPane.setMinWidth(newV.doubleValue());
+            } else {
+                anchorPane.setPrefWidth(400);
+                anchorPane.setMaxWidth(400);
+                anchorPane.setMinWidth(400);
+            }
+        });
 
         Button closeBtn = new Button();
         closeBtn.setPrefHeight(30);
@@ -220,6 +244,7 @@ public class ViewingImages extends GridPane {
 
         countImageLB = new Label(hotel.getCurrentImageIndex() + 1 + "/" + maxIndImg);
         countImageLB.getStyleClass().add("count-image-label");
+        countImageLB.setPadding(new Insets(3, 10, 3, 10));
 
         countImageHB.getChildren().add(countImageLB);
 
@@ -229,6 +254,7 @@ public class ViewingImages extends GridPane {
         AnchorPane.setBottomAnchor(allImages, 10.0);
         AnchorPane.setLeftAnchor(allImages, 15.0);
         AnchorPane.setRightAnchor(allImages, 15.0);
+        allImages.setFixedCellSize(100);
         allImages.setSelectionModel(null);
         allImages.getStyleClass().add("images-list-view");
         allImages.setOrientation(Orientation.HORIZONTAL);
@@ -241,6 +267,8 @@ public class ViewingImages extends GridPane {
         }
 
         anchorPane.getChildren().add(allImages);
+
+        overSP.getChildren().add(anchorPane);
     }
 
     public void show() {

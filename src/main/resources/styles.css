@@ -664,6 +664,7 @@
     -fx-font-size: 14;
     -fx-background-radius: 6;
     -fx-border-width: 0;
+    -fx-font-weight: bold;
     -fx-background-color: rgba(220, 220, 220);
 }
 
