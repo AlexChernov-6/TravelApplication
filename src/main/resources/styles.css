@@ -676,6 +676,12 @@
 
 .images-list-view .list-cell {
     -fx-padding: 0 2.5;
+    -fx-background-color: transparent;
+}
+
+.images-list-view .list-cell:selected {
+    -fx-background-color: #b40acf;
+    -fx-background-radius: 15;
 }
 
 .images-list-view .scroll-bar:vertical,

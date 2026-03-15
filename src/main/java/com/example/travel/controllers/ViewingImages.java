@@ -1,10 +1,8 @@
 package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
-import com.example.travel.services.DirectionService;
+import com.example.travel.util.ImageUtils;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -14,11 +12,13 @@ import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Rectangle;
 
 import java.util.Objects;
+
+import static com.example.travel.util.ImageUtils.round;
 
 public class ViewingImages extends GridPane {
 
@@ -121,6 +121,7 @@ public class ViewingImages extends GridPane {
         StackPane fifthIStackPane = new StackPane();
         GridPane.setColumnIndex(fifthIStackPane, 2);
         GridPane.setRowIndex(fifthIStackPane, 1);
+        fifthIStackPane.setStyle("-fx-background-radius: 0 0 10 0;");
 
         ImageView fifthIV = new ImageView(hotel.getImageByNumber(4));
         fifthIV.setOnMouseClicked(e -> {
@@ -136,17 +137,6 @@ public class ViewingImages extends GridPane {
         fifthIV.getStyleClass().add("set-hand-cursor");
         fifthIV.setPreserveRatio(true);
 
-        widthProperty().addListener((ob, oldV, newV) -> {
-            double newVal = newV.doubleValue();
-            if(newVal >= 600) {
-                firstIV.setFitWidth(newVal / 2);
-                secondIV.setFitWidth(newVal / 4);
-                thirdIV.setFitWidth(newVal / 4);
-                fourthIV.setFitWidth(newVal / 4);
-                fifthIV.setFitWidth(newVal / 4);
-            }
-        });
-
         fifthIV.fitWidthProperty().addListener((ob, oldV, newV) -> {
             double newVal = newV.doubleValue();
             fifthIStackPane.setPrefWidth(newVal);
@@ -156,13 +146,32 @@ public class ViewingImages extends GridPane {
 
         Pane shadowPane = new Pane();
         shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
+        shadowPane.setMouseTransparent(true);
 
         Label countHiddenImage = new Label("+" + (maxIndImg - 5));
         countHiddenImage.setStyle("-fx-text-fill: white; -fx-font-size: 25; -fx-font-weight: bold;");
+        countHiddenImage.setMouseTransparent(true);
 
         fifthIStackPane.getChildren().addAll(fifthIV, shadowPane, countHiddenImage);
 
         getChildren().addAll(firstIV, secondIV, thirdIV, fourthIV, fifthIStackPane);
+
+        widthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue();
+            if(newVal >= 600) {
+                firstIV.setFitWidth(newVal / 2);
+                secondIV.setFitWidth(newVal / 4);
+                thirdIV.setFitWidth(newVal / 4);
+                fourthIV.setFitWidth(newVal / 4);
+                fifthIV.setFitWidth(newVal / 4);
+                Platform.runLater(() -> {
+                    round(firstIV, 30, 0, 0, 30);
+                    round(fourthIV, 0, 30, 0, 0);
+                    round(fifthIV, 0, 0, 30, 0);
+                    round(shadowPane, 0, 0, 30, 0);
+                });
+            }
+        });
     }
 
     private void createViewingImages() {
@@ -225,6 +234,10 @@ public class ViewingImages extends GridPane {
         selectedIV = new ImageView(hotel.getImageByNumber(hotel.getCurrentImageIndex()));
         selectedIV.fitHeightProperty().bind(stackPane.heightProperty());
         selectedIV.setPreserveRatio(true);
+
+        selectedIV.fitHeightProperty().addListener((ob, oldV, newV) -> {
+            round(selectedIV, 30, 30, 30, 30);
+        });
 
         Button prevImageBtn = new Button();
         prevImageBtn.getStyleClass().add("scroll-button");
@@ -313,7 +326,6 @@ public class ViewingImages extends GridPane {
         AnchorPane.setBottomAnchor(allImages, 10.0);
         AnchorPane.setLeftAnchor(allImages, 15.0);
         AnchorPane.setRightAnchor(allImages, 15.0);
-        allImages.setFixedCellSize(100);
         allImages.getStyleClass().add("images-list-view");
         allImages.setOrientation(Orientation.HORIZONTAL);
         allImages.setPrefHeight(100);
@@ -321,10 +333,12 @@ public class ViewingImages extends GridPane {
             hotel.setCurrentImageIndex(newV.intValue());
             updateSelectedImage();
         });
+
         for(int i=0; i<maxIndImg; i=i+1) {
             ImageView imageView = new ImageView(hotel.getImageByNumber(i));
-            imageView.setFitHeight(100);
+            imageView.setFitHeight(94);
             imageView.setPreserveRatio(true);
+            round(imageView, 30, 30, 30, 30);
             allImages.getItems().add(imageView);
         }
 

@@ -248,8 +248,8 @@ public class HotelWindow extends VBox {
 
         ViewingImages viewingImages = new ViewingImages(selectedHotel);
         AnchorPane.setTopAnchor(viewingImages, 110.0);
-        AnchorPane.setLeftAnchor(viewingImages, 0.0);
-        AnchorPane.setRightAnchor(viewingImages, 0.0);
+        AnchorPane.setLeftAnchor(viewingImages, 25.0);
+        AnchorPane.setRightAnchor(viewingImages, 25.0);
         viewingImages.setPrefHeight(400);
 
         rootAP.getChildren().add(viewingImages);
