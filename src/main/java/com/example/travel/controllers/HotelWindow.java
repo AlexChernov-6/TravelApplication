@@ -2,12 +2,14 @@ package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
 import com.example.travel.services.RoomService;
+import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -18,16 +20,25 @@ import java.util.Objects;
 
 import static com.example.travel.controllers.HotelCell.*;
 
-public class HotelWindow extends VBox {
+public class HotelWindow extends ScrollPane {
     private Hotel selectedHotel;
 
     private Label hotelNameLB, hotelCountStar, ratingLB, addressLabel, actualMinPriceLB;
     private Text actualPriceLB;
+    private VBox rootVB;
 
     public HotelWindow(Hotel hotel) {
         this.selectedHotel = hotel;
-        setSpacing(15);
-        setStyle("-fx-background-color: white;");
+        rootVB = new VBox(15);
+
+        Platform.runLater(() -> {
+            new HelpFullClass().scrollPaneAnimation(this);
+        });
+        this.setContent(rootVB);
+        setFitToWidth(true);
+        setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        setHbarPolicy(ScrollBarPolicy.NEVER);
+        getStyleClass().add("scroll-pane");
 
         createBackBtn();
 
@@ -35,9 +46,12 @@ public class HotelWindow extends VBox {
     }
 
     private void createBackBtn() {
-        HBox buttonHB = new HBox(20);
+        HBox buttonHB = new HBox(10);
+        VBox.setMargin(buttonHB, new Insets(10, 0, 0, 10));
+        buttonHB.setPadding(new Insets(5, 10, 5, 10));
         buttonHB.setAlignment(Pos.CENTER_LEFT);
         buttonHB.getStyleClass().add("set-hand-cursor");
+        buttonHB.setMaxWidth(USE_PREF_SIZE);
 
         ImageView btnIV = new ImageView(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/left-arrow.png"))));
@@ -52,12 +66,11 @@ public class HotelWindow extends VBox {
 
         buttonHB.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
-                //Реализовать кнопку назад
                 PopularDestinationsController.getOverlaySP().getChildren().remove(this);
             }
         });
 
-        getChildren().add(buttonHB);
+        rootVB.getChildren().add(buttonHB);
     }
 
     private void createHotelInformation() {
@@ -76,9 +89,11 @@ public class HotelWindow extends VBox {
 
         overSP.widthProperty().addListener((ob, oldV, newV) -> {
             double newVal = newV.doubleValue();
-            rootAP.setPrefWidth(newVal);
-            rootAP.setMinWidth(newVal);
-            rootAP.setMaxWidth(newVal);
+            if(newVal >= 700) {
+                rootAP.setPrefWidth(newVal);
+                rootAP.setMinWidth(newVal);
+                rootAP.setMaxWidth(newVal);
+            }
         });
 
         overSP.heightProperty().addListener((ob, oldV, newV) -> {
@@ -102,7 +117,7 @@ public class HotelWindow extends VBox {
 
         GridPane hotelInfoHeader = new GridPane();
         hotelInfoHeader.setPadding(new Insets(20, 15, 15, 15));
-        hotelInfoHeader.setPrefHeight(100);
+        hotelInfoHeader.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
         AnchorPane.setTopAnchor(hotelInfoHeader, 20.0);
         AnchorPane.setLeftAnchor(hotelInfoHeader, 15.0);
         AnchorPane.setRightAnchor(hotelInfoHeader, 15.0);
@@ -121,10 +136,16 @@ public class HotelWindow extends VBox {
 
         hotelInfoHeader.getColumnConstraints().addAll(col1, col2, col3);
 
-        hotelInfoHeader.getRowConstraints().addAll(
-                new RowConstraints(),
-                new RowConstraints()
-        );
+        RowConstraints row1 = new RowConstraints();
+        row1.setVgrow(Priority.NEVER);
+
+        RowConstraints row2 = new RowConstraints();
+        row2.setVgrow(Priority.NEVER);
+
+        RowConstraints row3 = new RowConstraints();
+        row3.setVgrow(Priority.ALWAYS);
+
+        hotelInfoHeader.getRowConstraints().addAll(row1, row2, row3);
 
         HBox hotelNameHB = new HBox();
         GridPane.setValignment(hotelNameHB, VPos.BOTTOM);
@@ -244,16 +265,29 @@ public class HotelWindow extends VBox {
 
         hotelInfoHeader.getChildren().add(chooseRoom);
 
+        ViewingImages viewingImages = new ViewingImages(selectedHotel, hotelInfoHeader);
+        GridPane.setColumnIndex(viewingImages, 0);
+        GridPane.setColumnSpan(viewingImages, 3);
+        GridPane.setRowIndex(viewingImages, 2);
+        GridPane.setMargin(viewingImages, new Insets(20, 0, 0, 0));
+        GridPane.setValignment(viewingImages, VPos.BOTTOM);
+        hotelInfoHeader.widthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue() - 30;
+            viewingImages.setPrefWidth(newVal);
+            viewingImages.setMaxWidth(newVal);
+            viewingImages.setMinWidth(newVal);
+        });
+
+        hotelInfoHeader.getChildren().add(viewingImages);
+
         rootAP.getChildren().add(hotelInfoHeader);
 
-        ViewingImages viewingImages = new ViewingImages(selectedHotel);
-        AnchorPane.setTopAnchor(viewingImages, 110.0);
-        AnchorPane.setLeftAnchor(viewingImages, 25.0);
-        AnchorPane.setRightAnchor(viewingImages, 25.0);
-        viewingImages.setPrefHeight(400);
+        rootVB.getChildren().add(rootAP);
+    }
 
-        rootAP.getChildren().add(viewingImages);
+    private void createBodyInformation() {
+        HBox bodyHB = new HBox(3);
 
-        getChildren().add(rootAP);
+
     }
 }

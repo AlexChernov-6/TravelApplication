@@ -30,9 +30,11 @@ public class ViewingImages extends GridPane {
     private Pane shadowPane;
     private ListView<ImageView> allImages;
     private ImageView selectedIV;
+    private GridPane parentGP;
 
-    public ViewingImages(Hotel hotel) {
+    public ViewingImages(Hotel hotel, GridPane parentGP) {
         this.hotel = hotel;
+        this.parentGP = parentGP;
         maxIndImg = hotel.getHotelPhotos().length;
 
         setAlignment(Pos.TOP_CENTER);
@@ -164,11 +166,13 @@ public class ViewingImages extends GridPane {
                 thirdIV.setFitWidth(newVal / 4);
                 fourthIV.setFitWidth(newVal / 4);
                 fifthIV.setFitWidth(newVal / 4);
+                round(firstIV, 30, 0, 0, 30);
+                round(fourthIV, 0, 30, 0, 0);
+                round(fifthIV, 0, 0, 30, 0);
                 Platform.runLater(() -> {
-                    round(firstIV, 30, 0, 0, 30);
-                    round(fourthIV, 0, 30, 0, 0);
-                    round(fifthIV, 0, 0, 30, 0);
                     round(shadowPane, 0, 0, 30, 0);
+                    double newHeight = 80 + firstIV.getLayoutBounds().getHeight();
+                    parentGP.setPrefHeight(newHeight);
                 });
             }
         });
