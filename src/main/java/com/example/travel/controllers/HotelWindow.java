@@ -4,6 +4,7 @@ import com.example.travel.models.Hotel;
 import com.example.travel.services.RoomService;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
+import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -15,6 +16,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 
 import java.util.Objects;
 
@@ -26,6 +30,10 @@ public class HotelWindow extends ScrollPane {
     private Label hotelNameLB, hotelCountStar, ratingLB, addressLabel, actualMinPriceLB;
     private Text actualPriceLB;
     private VBox rootVB;
+
+    private Pane shadowPane;
+    private Button closeBtn;
+    private WebView webView;
 
     public HotelWindow(Hotel hotel) {
         this.selectedHotel = hotel;
@@ -204,8 +212,74 @@ public class HotelWindow extends ScrollPane {
         addressHB.getChildren().addAll(mapIV, addressLabel);
 
         addressHB.setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
-                //Обработать нажатие на адрес
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if(selectedHotel.getLongitude() != null && selectedHotel.getLatitude() != null) {
+                    shadowPane = new Pane();
+                    shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
+                    overSP.getChildren().add(shadowPane);
+
+                    closeBtn = new Button();
+                    closeBtn.setPrefHeight(30);
+                    closeBtn.setPrefWidth(30);
+                    StackPane.setAlignment(closeBtn, Pos.TOP_RIGHT);
+                    StackPane.setMargin(closeBtn, new Insets(20, 20, 0, 0));
+                    closeBtn.getStyleClass().add("close-button");
+                    closeBtn.setOnAction(event -> {
+                        hide();
+                    });
+
+                    ImageView closeImg = new ImageView(
+                            new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/close.png"))));
+                    closeImg.setFitHeight(15);
+                    closeImg.setFitWidth(15);
+                    closeImg.setPreserveRatio(true);
+
+                    closeBtn.setGraphic(closeImg);
+
+                    overSP.getChildren().add(closeBtn);
+
+                    webView = new WebView();
+
+                    double startWidthWebView = overSP.getWidth() * 0.7;
+                    double startHeightWebView = overSP.getHeight() * 0.8;
+
+                    webView.setPrefWidth(startWidthWebView);
+                    webView.setMaxWidth(startWidthWebView);
+                    webView.setMinWidth(startWidthWebView);
+                    webView.setPrefHeight(startHeightWebView);
+                    webView.setMaxHeight(startHeightWebView);
+                    webView.setMinHeight(startHeightWebView);
+
+                    // Привязка размеров (как у вас)
+                    overSP.widthProperty().addListener((ob, oldV, newV) -> {
+                        double newVal = newV.doubleValue() * 0.7;
+                        webView.setPrefWidth(newVal);
+                        webView.setMaxWidth(newVal);
+                        webView.setMinWidth(newVal);
+                    });
+                    overSP.heightProperty().addListener((ob, oldV, newV) -> {
+                        double newVal = newV.doubleValue() * 0.8;
+                        webView.setPrefHeight(newVal);
+                        webView.setMaxHeight(newVal);
+                        webView.setMinHeight(newVal);
+                    });
+
+                    WebEngine webEngine = webView.getEngine();
+
+                    webEngine.load("http://localhost:8080/map.html");
+
+                    // После успешной загрузки вызываем initMap
+                    webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+                        if (newState == Worker.State.SUCCEEDED) {
+                            String coords = String.format("%.6f", selectedHotel.getLongitude()).replace(",", ".")
+                                    + "," + String.format("%.6f", selectedHotel.getLatitude()).replace(",", ".");
+                            webEngine.executeScript("initMap('" + coords + "', '" + selectedHotel.getHotelName()
+                                    +  "', '" + selectedHotel.getHotelAddress() + "');");
+                        }
+                    });
+
+                    overSP.getChildren().add(webView);
+                } else System.out.println("Координаты пусты");
             }
         });
 
@@ -283,6 +357,12 @@ public class HotelWindow extends ScrollPane {
         rootAP.getChildren().add(hotelInfoHeader);
 
         rootVB.getChildren().add(rootAP);
+    }
+
+    public void hide() {
+        shadowPane.setVisible(false);
+        closeBtn.setVisible(false);
+        webView.setVisible(false);
     }
 
     private void createBodyInformation() {

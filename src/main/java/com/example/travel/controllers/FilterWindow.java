@@ -54,8 +54,6 @@ public class FilterWindow extends AnchorPane {
 
     private List<CustomCheckButton> allCheckButtons = new ArrayList<>();
 
-    private boolean updating = false;
-
     public FilterWindow(StackPane overlaySP) {
         this.overlaySP = overlaySP;
 

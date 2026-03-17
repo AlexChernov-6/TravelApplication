@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Карта отеля</title>
+    <script src="https://api-maps.yandex.ru/v3/?apikey=c2e09213-1440-4394-91d8-d6163238d3ee&lang=ru_RU" type="text/javascript"></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        #map { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script type="text/javascript">
+    async function initMap(coords, hotelName, address) {
+        console.log('initMap вызвана с параметрами:', coords, hotelName);
+        if (!coords || !hotelName) {
+            console.error('Ошибка: координаты или название отеля не переданы!');
+            return;
+        }
+        try {
+            await ymaps3.ready;
+            console.log('API Яндекс Карт готово');
+
+            // Регистрируем CDN для загрузки пакета UI
+            ymaps3.import.registerCdn(
+                'https://cdn.jsdelivr.net/npm/{package}',
+                '@yandex/ymaps3-default-ui-theme@0.0.24'
+            );
+
+            const uiModule = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
+            console.log('Модуль @yandex/ymaps3-default-ui-theme загружен', uiModule);
+
+            const { YMapZoomControl, YMapDefaultMarker, YMapPopupMarker } = uiModule;
+            const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapControls } = ymaps3;
+
+            const [lat, lon] = coords.split(',').map(Number);
+            console.log('Координаты:', lat, lon);
+
+            const map = new YMap(document.getElementById('map'), {
+                location: { center: [lon, lat], zoom: 17 }
+            });
+
+            map.addChild(new YMapDefaultSchemeLayer());
+            map.addChild(new YMapDefaultFeaturesLayer());
+            console.log('Базовые слои добавлены');
+
+            // Контрол зума
+            const controls = new YMapControls({ position: 'top left' });
+            controls.addChild(new YMapZoomControl({}));
+            map.addChild(controls);
+            console.log('YMapZoomControl добавлен');
+
+            // Маркер с попапом (всплывающее окно при клике)
+            const popupMarker = new YMapPopupMarker({
+                coordinates: [lon, lat],
+                content: () => {
+                    const div = document.createElement('div');
+                    div.style.padding = '10px';
+                    div.style.background = 'white';
+                    div.style.borderRadius = '8px';
+                    div.innerHTML = `<b>${hotelName}</b><br>Координаты: ${lat}, ${lon}<br>${address}`;
+                    return div;
+                }
+            });
+            map.addChild(popupMarker);
+            console.log('YMapPopupMarker добавлен');
+
+            const defaultMarker = new YMapDefaultMarker({
+                coordinates: [lon, lat],
+                hint: 'Отель',
+                color: 'red'
+            });
+            map.addChild(defaultMarker);
+            console.log('YMapDefaultMarker добавлен');
+
+            console.log('Инициализация карты завершена');
+        } catch (error) {
+            console.error('Глобальная ошибка:', error);
+        }
+    }
+</script>
+</body>
+</html>

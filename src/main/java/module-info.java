@@ -14,6 +14,9 @@ module com.example.travel {
     requires jakarta.persistence;
     requires java.mail;
     requires java.persistence;
+    requires javafx.web;
+    requires jdk.httpserver;
+    requires jdk.jsobject;
 
     opens com.example.travel to javafx.fxml, javafx.graphics;
     exports com.example.travel.controllers;
