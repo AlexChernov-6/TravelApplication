@@ -13,10 +13,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -67,6 +64,8 @@ public class HotelCell extends ListCell<Hotel> {
 
     private int countVisibleFeature = 5;
     private Label countLabel;
+
+    private static HotelWindow hotelWindow;
 
     public HotelCell() {
         createCell();
@@ -378,10 +377,11 @@ public class HotelCell extends ListCell<Hotel> {
 
         rootGridPane.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
-                HotelWindow hotelWindow = new HotelWindow(currentHotel);//Нормализовать
-                hotelWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
-                hotelWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
-                PopularDestinationsController.getOverlaySP().getChildren().add(hotelWindow);
+                if(PopularDestinationsController.getOverlaySP().getChildren().stream().filter(
+                        node -> node.getUserData() != null && node.getUserData().equals("hotelWindow")).toList().isEmpty())
+                    createHotelWindow();
+
+                showHotelWindow();
             }
         });
 
@@ -439,10 +439,7 @@ public class HotelCell extends ListCell<Hotel> {
         countLabel.setVisible(false);
         hotelFeaturesContainer.getChildren().add(countLabel);
         countLabel.textProperty().addListener((ob, oldV, newV) -> {
-            if(Integer.parseInt(newV) <= 0)
-                countLabel.setVisible(false);
-            else
-                countLabel.setVisible(true);
+            countLabel.setVisible(Integer.parseInt(newV) > 0);
         });
     }
 
@@ -475,5 +472,19 @@ public class HotelCell extends ListCell<Hotel> {
                 hotelFeaturesContainer.getChildren().remove(hotelFeaturesContainer.getChildren().size() - 2);
             }
         }
+    }
+
+    private void createHotelWindow() {
+        hotelWindow = new HotelWindow();
+        hotelWindow.setUserData("hotelWindow");
+        hotelWindow.setVisible(false);
+        hotelWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
+        hotelWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
+        PopularDestinationsController.getOverlaySP().getChildren().add(hotelWindow);
+    }
+
+    private void showHotelWindow() {
+        hotelWindow.updateSelectedHotel(currentHotel);
+        hotelWindow.setVisible(true);
     }
 }

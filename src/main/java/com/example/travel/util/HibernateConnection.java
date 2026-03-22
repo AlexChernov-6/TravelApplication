@@ -28,6 +28,7 @@ public class HibernateConnection {
                         .addAnnotatedClass(RoomFeature.class)
                         .addAnnotatedClass(RoomFeatureRelation.class)
                         .addAnnotatedClass(User.class)
+                        .addAnnotatedClass(Review.class)
                         .buildSessionFactory();
             } catch (IOException e) {
                 System.err.println(e.getMessage());

@@ -76,13 +76,11 @@ public class HelpFullClass {
         return loadHB;
     }
 
-    public void scrollPaneAnimation(ScrollPane scrollPane) {
+    public void scrollPaneAnimation(Node node) {
         Platform.runLater(() -> {
-            Node verticalBar = scrollPane.lookup(".scroll-bar:vertical");
-            if (verticalBar instanceof ScrollBar) {
-                vBar = (ScrollBar) verticalBar;
-                vBar.setOpacity(0.0);
-            }
+            vBar = (ScrollBar) node.lookup(".scroll-bar:vertical");
+            vBar.setStyle("-fx-pref-width: 10;");
+            vBar.setOpacity(0.0);
 
             FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
             fadeIn.setToValue(1.0);
@@ -117,7 +115,7 @@ public class HelpFullClass {
                 hideTimer.playFromStart();
             });
 
-            scrollPane.vvalueProperty().addListener((ob, oldV, newV) -> {
+            vBar.valueProperty().addListener((ob, oldV, newV) -> {
                 if (oldV.doubleValue() != newV.doubleValue()) {
                     showBar.run();
                 }

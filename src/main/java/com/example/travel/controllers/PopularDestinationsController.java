@@ -58,7 +58,6 @@ public class PopularDestinationsController {
     private static FilterWindow filterWindow;
     protected static Direction oldPressedDirection;
     private static final RoomService roomService = new RoomService();
-    private static  ScrollBar vBar;
     protected static Map<String, Predicate<Hotel>> filteres = new HashMap<>();
 
     protected static ObjectProperty<Predicate<Hotel>> nameHotel = new SimpleObjectProperty<>();
@@ -338,7 +337,7 @@ public class PopularDestinationsController {
 
         // Кнопка сортировки (только иконка)
         Button sortBtn = new Button();
-        sortBtn.setPrefHeight(40);
+        sortBtn.setPrefHeight(35);
         sortBtn.getStyleClass().add("custom-button");
         sortBtn.setPadding(new Insets(0));
         sortBtn.setOnAction(e -> {
@@ -356,13 +355,13 @@ public class PopularDestinationsController {
         HBox backgroundHBSort = new HBox();
         backgroundHBSort.getStyleClass().add("sort-button-hbox");
         backgroundHBSort.setAlignment(Pos.CENTER);
-        backgroundHBSort.setPadding(new Insets(2, 10, 2, 10));
+        backgroundHBSort.setPadding(new Insets(10));
 
         ImageView imageSort = new ImageView(
                 new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/sort.png")))
         );
-        imageSort.setFitHeight(25);
-        imageSort.setFitWidth(25);
+        imageSort.setFitHeight(20);
+        imageSort.setFitWidth(20);
         imageSort.setPreserveRatio(true);
 
         backgroundHBSort.getChildren().add(imageSort);

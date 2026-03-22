@@ -1,7 +1,6 @@
 package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
-import com.example.travel.util.ImageUtils;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -14,7 +13,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.scene.shape.Rectangle;
 
 import java.util.Objects;
 
@@ -23,20 +21,16 @@ import static com.example.travel.util.ImageUtils.round;
 public class ViewingImages extends GridPane {
 
     private final StackPane overSP = PopularDestinationsController.getOverlaySP();
-    private final Hotel hotel;
+    private Hotel hotel;
     private AnchorPane anchorPane;
     private Label countImageLB;
     private int maxIndImg;
     private Pane shadowPane;
     private ListView<ImageView> allImages;
-    private ImageView selectedIV;
-    private GridPane parentGP;
+    private ImageView selectedIV, firstIV, secondIV, thirdIV, fourthIV, fifthIV;
+    private Label countHiddenImage;
 
-    public ViewingImages(Hotel hotel, GridPane parentGP) {
-        this.hotel = hotel;
-        this.parentGP = parentGP;
-        maxIndImg = hotel.getHotelPhotos().length;
-
+    public ViewingImages(GridPane parentGP) {
         setAlignment(Pos.TOP_CENTER);
 
         ColumnConstraints col1 = new ColumnConstraints();
@@ -55,7 +49,7 @@ public class ViewingImages extends GridPane {
                 new RowConstraints()
         );
 
-        ImageView firstIV = new ImageView(hotel.getImageByNumber(0));
+        firstIV = new ImageView();
         GridPane.setColumnIndex(firstIV, 0);
         GridPane.setRowIndex(firstIV, 0);
         GridPane.setRowSpan(firstIV, 2);
@@ -72,7 +66,7 @@ public class ViewingImages extends GridPane {
         firstIV.getStyleClass().add("set-hand-cursor");
         firstIV.setPreserveRatio(true);
 
-        ImageView secondIV = new ImageView(hotel.getImageByNumber(1));
+        secondIV = new ImageView();
         GridPane.setColumnIndex(secondIV, 1);
         GridPane.setRowIndex(secondIV, 0);
         secondIV.setOnMouseClicked(e -> {
@@ -88,7 +82,7 @@ public class ViewingImages extends GridPane {
         secondIV.getStyleClass().add("set-hand-cursor");
         secondIV.setPreserveRatio(true);
 
-        ImageView thirdIV = new ImageView(hotel.getImageByNumber(2));
+        thirdIV = new ImageView();
         GridPane.setColumnIndex(thirdIV, 1);
         GridPane.setRowIndex(thirdIV, 1);
         thirdIV.setOnMouseClicked(e -> {
@@ -104,7 +98,7 @@ public class ViewingImages extends GridPane {
         thirdIV.getStyleClass().add("set-hand-cursor");
         thirdIV.setPreserveRatio(true);
 
-        ImageView fourthIV = new ImageView(hotel.getImageByNumber(3));
+        fourthIV = new ImageView();
         GridPane.setColumnIndex(fourthIV, 2);
         GridPane.setRowIndex(fourthIV, 0);
         fourthIV.setOnMouseClicked(e -> {
@@ -125,7 +119,7 @@ public class ViewingImages extends GridPane {
         GridPane.setRowIndex(fifthIStackPane, 1);
         fifthIStackPane.setStyle("-fx-background-radius: 0 0 10 0;");
 
-        ImageView fifthIV = new ImageView(hotel.getImageByNumber(4));
+        fifthIV = new ImageView();
         fifthIV.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 hotel.setCurrentImageIndex(4);
@@ -150,7 +144,7 @@ public class ViewingImages extends GridPane {
         shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
         shadowPane.setMouseTransparent(true);
 
-        Label countHiddenImage = new Label("+" + (maxIndImg - 5));
+        countHiddenImage = new Label();
         countHiddenImage.setStyle("-fx-text-fill: white; -fx-font-size: 25; -fx-font-weight: bold;");
         countHiddenImage.setMouseTransparent(true);
 
@@ -380,6 +374,20 @@ public class ViewingImages extends GridPane {
     private void updateSelectedImage() {
         selectedIV.setImage(hotel.getImageByNumber(hotel.getCurrentImageIndex()));
         allImages.scrollTo(hotel.getCurrentImageIndex());
+        allImages.getSelectionModel().select(hotel.getCurrentImageIndex());
         countImageLB.setText(hotel.getCurrentImageIndex() + 1 + "/" + maxIndImg);
+    }
+
+    protected void updateSelectedHotel(Hotel hotel) {
+        this.hotel = hotel;
+        maxIndImg = hotel.getHotelPhotos().length;
+
+        firstIV.setImage(hotel.getImageByNumber(0));
+        secondIV.setImage(hotel.getImageByNumber(1));
+        thirdIV.setImage(hotel.getImageByNumber(2));
+        fourthIV.setImage(hotel.getImageByNumber(3));
+        fifthIV.setImage(hotel.getImageByNumber(4));
+
+        countHiddenImage.setText("+" + (maxIndImg - 5));
     }
 }
