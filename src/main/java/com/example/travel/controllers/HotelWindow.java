@@ -2,6 +2,7 @@ package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
 import com.example.travel.models.Review;
+import com.example.travel.models.Room;
 import com.example.travel.services.ReviewService;
 import com.example.travel.services.RoomService;
 import com.example.travel.util.HelpFullClass;
@@ -95,15 +96,15 @@ public class HotelWindow extends ScrollPane {
 
         if (newValue >= 4) {
             ratLB.setStyle("-fx-text-fill: #0bb527; -fx-font-size: 26px; -fx-font-weight: bold;");
-            ratString.setStyle("-fx-text-fill: #0bb527; -fx-font-size: 16px;");
+            ratString.setStyle("-fx-text-fill: #0bb527; -fx-font-size: 16px; -fx-font-weight: bold;");
             ratString.setText("Безупречно");
         } else if (newValue < 4 && newValue >= 3) {
             ratLB.setStyle("-fx-text-fill: #7fb50b; -fx-font-size: 26px; -fx-font-weight: bold;");
-            ratString.setStyle("-fx-text-fill: #7fb50b; -fx-font-size: 16px;");
+            ratString.setStyle("-fx-text-fill: #7fb50b; -fx-font-size: 16px; -fx-font-weight: bold;");
             ratString.setText("Хорошо");
         } else if (newValue < 3 && newValue >= 2) {
             ratLB.setStyle("-fx-text-fill: #cbdb16; -fx-font-size: 26px; -fx-font-weight: bold;");
-            ratString.setStyle("-fx-text-fill: #cbdb16; -fx-font-size: 16px;");
+            ratString.setStyle("-fx-text-fill: #cbdb16; -fx-font-size: 16px; -fx-font-weight: bold;");
             ratString.setText("Нормально");
         } else {
             ratLB.setStyle("-fx-text-fill: #b00000; -fx-font-size: 26px; -fx-font-weight: bold;");
@@ -336,10 +337,9 @@ public class HotelWindow extends ScrollPane {
                 new RowConstraints()
         );
 
-        leftGP.setPrefWidth(200);
+        leftGP.setPrefWidth(300);
 
         GridPane ratGP = new GridPane();
-        ratGP.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         ratGP.getRowConstraints().addAll(
                 new RowConstraints(),
                 new RowConstraints()
@@ -374,9 +374,8 @@ public class HotelWindow extends ScrollPane {
         GridPane.setColumnSpan(allReviewsBtn, 2);
         GridPane.setValignment(allReviewsBtn, VPos.BOTTOM);
         allReviewsBtn.getStyleClass().add("select-button");
-        allReviewsBtn.setMaxWidth(Double.MAX_VALUE);
-        GridPane.setFillWidth(allReviewsBtn, true);
         GridPane.setMargin(allReviewsBtn, new Insets(10, 0, 0, 10));
+        allReviewsBtn.setPrefWidth(280);
         allReviewsBtn.setOnAction(e -> {
             if (reviewListView == null)
                 createListComments();
@@ -474,6 +473,21 @@ public class HotelWindow extends ScrollPane {
         reviewListView.getItems().addAll(new ReviewService().getAllReviewByHotelId(selectedHotel.getIdHotel()).stream()
                 .filter(review -> review.getComment() != null).sorted((rev1, rev2)
                         -> rev2.getRating() - rev1.getRating()).toList());
+    }
+
+    private void createListRooms() {
+        Label countRoom = new Label();
+        countRoom.setStyle("-fx-font-size:26px; -fx-font-weight: bold;");
+        rootVB.getChildren().add(countRoom);
+
+        ListView<Room> roomListView = new ListView<>();
+        roomListView.setSelectionModel(null);
+        roomListView.getStyleClass().add("list-view");
+        roomListView.setCellFactory(cell -> new RoomCell());
+
+        rootVB.getChildren().add(roomListView);
+
+        roomListView.getItems().addAll(new RoomService().getAllRowByHotelId());
     }
 
     private void createMap() {

@@ -34,4 +34,9 @@ public class MealPlan {
     public void setMealName(String mealName) {
         this.mealName = mealName;
     }
+
+    @Override
+    public String toString() {
+        return mealName;
+    }
 }
