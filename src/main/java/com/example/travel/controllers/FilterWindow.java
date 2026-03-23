@@ -516,7 +516,6 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void filteredData() {
-        FilteredList<Hotel> filteredList = PopularDestinationsController.getFilteredHotels();
         filterPredicate.bind(Bindings.createObjectBinding(() -> hotel -> checkPrice(hotel) && checkStar(hotel)
                 && checkRat(hotel) && checkCancellation(hotel) && checkPaymentMethod(hotel)
                 && checkHotelFeature(hotel) && checkRoomFeature(hotel)));

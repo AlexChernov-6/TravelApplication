@@ -19,7 +19,8 @@ import static com.example.travel.controllers.HotelCell.*;
 public class RoomCell extends ListCell<Room> {
     private GridPane rootGP;
     private ImageView imageView;
-    private Label countImageLB, nameRoom, countRoomSleepingPlacesLB, roomSquareLB, actualMinPriceLB;
+    private Label countImageLB, nameRoom, countRoomSleepingPlacesLB, roomSquareLB, actualMinPriceLB, mealPlanLB2
+            , refundPolicyLB2, paymentMethodLB2;
     private ImageView mealPlanIV, refundPolicyIV, paymentMethodIV;
     private Text actualPriceLB;
 
@@ -27,6 +28,8 @@ public class RoomCell extends ListCell<Room> {
         rootGP = new GridPane();
         rootGP.setPrefHeight(200);
         rootGP.setMinWidth(200 + 250 + 120 + 200);
+
+        rootGP.prefWidthProperty().bind(widthProperty().subtract(10));
 
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setMinWidth(200);
@@ -36,16 +39,20 @@ public class RoomCell extends ListCell<Room> {
         col2.setMinWidth(250);
         col2.setHgrow(Priority.ALWAYS);
 
-
         ColumnConstraints col3 = new ColumnConstraints();
-        col3.setPrefWidth(120);
+        col3.setMinWidth(170);
         col3.setHgrow(Priority.NEVER);
 
         ColumnConstraints col4 = new ColumnConstraints();
-        col4.setPrefWidth(200);
+        col4.setMinWidth(200);
         col4.setHgrow(Priority.NEVER);
 
+        rootGP.getColumnConstraints().addAll(col1, col2, col3, col4);
+
         StackPane photosStackPane = new StackPane();
+        photosStackPane.setPrefWidth(200);
+        photosStackPane.setPrefHeight(200);
+        photosStackPane.setStyle("-fx-background-color: red;");
 
         imageView = new ImageView();
         imageView.setFitWidth(200);
@@ -87,6 +94,7 @@ public class RoomCell extends ListCell<Room> {
         VBox basicInformationVB = new VBox(10);
         GridPane.setColumnIndex(basicInformationVB, 1);
         basicInformationVB.setAlignment(Pos.TOP_LEFT);
+        basicInformationVB.setPadding(new Insets(0, 10, 10, 10));
 
         nameRoom = new Label();
         nameRoom.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
@@ -99,10 +107,12 @@ public class RoomCell extends ListCell<Room> {
         basicInformationVB.getChildren().add(roomSleepingPlaces);
 
         HBox countRoomSleepingPlacesHB = new HBox(8);
+        countRoomSleepingPlacesHB.setAlignment(Pos.CENTER_LEFT);
 
-        ImageView bedIV = new ImageView();
-        bedIV.setFitHeight(12);
-        bedIV.setFitWidth(12);
+        ImageView bedIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/bed.png"))));
+        bedIV.setFitHeight(20);
+        bedIV.setFitWidth(20);
         bedIV.setPreserveRatio(true);
 
         countRoomSleepingPlacesLB = new Label();
@@ -115,26 +125,29 @@ public class RoomCell extends ListCell<Room> {
         HBox bottomHB = new HBox(2);
         VBox.setVgrow(bottomHB, Priority.ALWAYS);
         bottomHB.setAlignment(Pos.BOTTOM_LEFT);
-        bottomHB.setPadding(new Insets(2, 5, 2, 5));
 
         HBox aboutTheRoomHB = new HBox(3);
         aboutTheRoomHB.setStyle("-fx-background-color: rgba(255,230,255, 0.8); -fx-background-radius: 12px;");
+        aboutTheRoomHB.setPadding(new Insets(2, 8, 2, 8));
+        aboutTheRoomHB.setAlignment(Pos.CENTER_LEFT);
+        aboutTheRoomHB.setPrefHeight(20);
 
         Label aboutTheRoomLB = new Label("O номере");
         aboutTheRoomLB.setStyle("-fx-text-fill: rgba(176, 60, 176);");
 
         ImageView arrowRightIV = new ImageView(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/right-arrow-violet.png"))));
-        arrowRightIV.setFitWidth(5);
-        arrowRightIV.setFitHeight(5);
+        arrowRightIV.setFitWidth(8);
+        arrowRightIV.setFitHeight(8);
         arrowRightIV.setPreserveRatio(true);
 
         aboutTheRoomHB.getChildren().addAll(aboutTheRoomLB, arrowRightIV);
 
         bottomHB.getChildren().add(aboutTheRoomHB);
 
-        roomSquareLB = new Label(" м²");
+        roomSquareLB = new Label();
         roomSquareLB.setStyle("-fx-text-fill: rgba(170, 170, 170); -fx-background-color: rgba(240,240,240); -fx-background-radius: 12px;");
+        roomSquareLB.setPadding(new Insets(2, 8, 2, 8));
 
         bottomHB.getChildren().add(roomSquareLB);
 
@@ -146,7 +159,7 @@ public class RoomCell extends ListCell<Room> {
         GridPane.setColumnIndex(featuresGP, 2);
 
         ColumnConstraints col11 = new ColumnConstraints();
-        col11.setPrefWidth(50);
+        col11.setPrefWidth(70);
         col11.setHgrow(Priority.NEVER);
 
         ColumnConstraints col12 = new ColumnConstraints();
@@ -205,20 +218,20 @@ public class RoomCell extends ListCell<Room> {
 
         featuresGP.getChildren().add(paymentMethodIV);
 
-        Label mealPlanLB2 = new Label("Питание");
+        mealPlanLB2 = new Label("Питание");
         mealPlanLB2.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         GridPane.setColumnIndex(mealPlanLB2, 2);
 
-        featuresGP.getChildren().add(mealPlanLB);
+        featuresGP.getChildren().add(mealPlanLB2);
 
-        Label refundPolicyLB2 = new Label("Возврат");
+        refundPolicyLB2 = new Label("Возврат");
         GridPane.setRowIndex(refundPolicyLB2, 1);
         refundPolicyLB2.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         GridPane.setColumnIndex(refundPolicyLB2, 2);
 
         featuresGP.getChildren().add(refundPolicyLB2);
 
-        Label paymentMethodLB2 = new Label("Оплата");
+        paymentMethodLB2 = new Label("Оплата");
         GridPane.setRowIndex(paymentMethodLB2, 2);
         paymentMethodLB2.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         GridPane.setColumnIndex(paymentMethodLB2, 2);
@@ -229,7 +242,7 @@ public class RoomCell extends ListCell<Room> {
 
         VBox minPriceRoomVB = new VBox(5);
         minPriceRoomVB.setPadding(new Insets(10));
-        GridPane.setColumnIndex(minPriceRoomVB, 2);
+        GridPane.setColumnIndex(minPriceRoomVB, 3);
         GridPane.setRowIndex(minPriceRoomVB, 0);
         minPriceRoomVB.setAlignment(Pos.TOP_LEFT);
 
@@ -269,11 +282,10 @@ public class RoomCell extends ListCell<Room> {
         minPriceRoomVB.getChildren().add(actualPriceHB);
 
         Button selectBtn = new Button("Выбрать");
-        VBox.setVgrow(selectBtn, Priority.ALWAYS);
         selectBtn.setAlignment(Pos.BOTTOM_CENTER);
         selectBtn.getStyleClass().add("select-button");
         selectBtn.setPrefWidth(Double.MAX_VALUE);
-        VBox.setMargin(selectBtn, new Insets(0, 30, 30, 10));
+        VBox.setMargin(selectBtn, new Insets(0, 10, 10, 10));
 
         minPriceRoomVB.getChildren().add(selectBtn);
 
@@ -294,6 +306,41 @@ public class RoomCell extends ListCell<Room> {
     }
 
     private void updateStateCell(Room room) {
+        imageView.setImage(room.getImageByNumber(0));
+        countImageLB.setText(String.format("%d фото", room.getRoomPhotos().length));
+        nameRoom.setText(room.getRoomName());
+        short roomCountRoomSleepingPlaces = room.getRoomSleepingPlaces();
+        if (roomCountRoomSleepingPlaces == 1)
+            countRoomSleepingPlacesLB.setText("1 место");
+        else if (roomCountRoomSleepingPlaces > 1 && roomCountRoomSleepingPlaces <= 4)
+            countRoomSleepingPlacesLB.setText(String.format("%d места", roomCountRoomSleepingPlaces));
+        else
+            countRoomSleepingPlacesLB.setText(String.format("%d мест", roomCountRoomSleepingPlaces));
 
+        roomSquareLB.setText(String.format("%d м²", Math.round(room.getRoomSquare())));
+
+        actualMinPriceLB.setText(String.format("%.2f", room.getRoomPrice()));
+        actualPriceLB.setText(String.format("%.2f", room.getRoomPrice() + room.getRoomPrice() * 0.05));
+
+        mealPlanLB2.setText(room.getMealPlan().toString());
+        refundPolicyLB2.setText(room.getRefundPolicy().toString());
+        paymentMethodLB2.setText(room.getPaymentMethod().toString());
+
+        if(mealPlanLB2.getText().equals("Без питания"))
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/no-food.png"))));
+        else
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/food.png"))));
+
+        if(refundPolicyLB2.getText().equals("Платная отмена"))
+            refundPolicyIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/paid-cancellation.png"))));
+        else
+            refundPolicyIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/free-cancellation.png"))));
+
+        paymentMethodIV.setImage(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/payment.png"))));
     }
 }

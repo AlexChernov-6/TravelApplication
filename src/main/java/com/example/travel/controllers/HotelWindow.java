@@ -8,6 +8,7 @@ import com.example.travel.services.RoomService;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
+import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -18,6 +19,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
@@ -44,6 +46,7 @@ public class HotelWindow extends ScrollPane {
     private Label ratLB, ratString, countRev, nameUser, reviewDate, reviewComment;
 
     private ListView<Review> reviewListView;
+    private ListView<Room> roomListView;
 
     public HotelWindow() {
         rootVB = new VBox(15);
@@ -63,6 +66,8 @@ public class HotelWindow extends ScrollPane {
         createHotelInformation();
 
         createReviews();
+
+        createListRooms();
     }
 
     protected void updateSelectedHotel(Hotel hotel) {
@@ -120,6 +125,13 @@ public class HotelWindow extends ScrollPane {
         reviewDate.setText(lDT.getDayOfMonth() + " " + getRussianMonthName(lDT.getMonth().getValue()).toLowerCase()
                 + " " + lDT.getYear());
         reviewComment.setText(bestReview.getComment());
+
+        roomListView.getItems().clear();
+        roomListView.getItems().addAll(new RoomService().getAllRowByHotelId(selectedHotel.getIdHotel()));
+
+        Platform.runLater(() -> {
+            roomListView.setPrefHeight(210 * roomListView.getItems().size());
+        });
     }
 
     private void createBackBtn() {
@@ -480,14 +492,20 @@ public class HotelWindow extends ScrollPane {
         countRoom.setStyle("-fx-font-size:26px; -fx-font-weight: bold;");
         rootVB.getChildren().add(countRoom);
 
-        ListView<Room> roomListView = new ListView<>();
+        roomListView = new ListView<>();
         roomListView.setSelectionModel(null);
         roomListView.getStyleClass().add("list-view");
         roomListView.setCellFactory(cell -> new RoomCell());
+        VBox.setMargin(roomListView, new Insets(0, 15, 0, 15));
+        roomListView.setStyle("-fx-background-color: white; -fx-background-radius: 12px;");
+
+        roomListView.addEventFilter(ScrollEvent.SCROLL, event -> {
+            Event redirectedEvent = event.copyFor(roomListView, rootVB);
+            rootVB.fireEvent(redirectedEvent);
+            event.consume();
+        });
 
         rootVB.getChildren().add(roomListView);
-
-        roomListView.getItems().addAll(new RoomService().getAllRowByHotelId());
     }
 
     private void createMap() {
