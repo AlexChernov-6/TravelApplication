@@ -25,26 +25,29 @@ public class RoomCell extends ListCell<Room> {
     private Text actualPriceLB;
 
     public RoomCell() {
+        setPadding(new Insets(0, 0, 20, 0));
         rootGP = new GridPane();
         rootGP.setPrefHeight(200);
-        rootGP.setMinWidth(200 + 250 + 120 + 200);
+        rootGP.setStyle("-fx-background-color: white; -fx-background-radius: 12px;");
+        rootGP.setMinWidth(200 + 200 + 300 + 220);
 
-        rootGP.prefWidthProperty().bind(widthProperty().subtract(10));
+        rootGP.maxWidthProperty().bind(widthProperty().subtract(10));
 
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setMinWidth(200);
         col1.setHgrow(Priority.NEVER);
 
         ColumnConstraints col2 = new ColumnConstraints();
-        col2.setMinWidth(250);
+        col2.prefWidthProperty().bind(widthProperty().subtract(200 + 200 + 300));
+        col2.setMinWidth(200);
         col2.setHgrow(Priority.ALWAYS);
 
         ColumnConstraints col3 = new ColumnConstraints();
-        col3.setMinWidth(170);
+        col3.setMinWidth(300);
         col3.setHgrow(Priority.NEVER);
 
         ColumnConstraints col4 = new ColumnConstraints();
-        col4.setMinWidth(200);
+        col4.setMinWidth(220);
         col4.setHgrow(Priority.NEVER);
 
         rootGP.getColumnConstraints().addAll(col1, col2, col3, col4);
@@ -52,7 +55,6 @@ public class RoomCell extends ListCell<Room> {
         StackPane photosStackPane = new StackPane();
         photosStackPane.setPrefWidth(200);
         photosStackPane.setPrefHeight(200);
-        photosStackPane.setStyle("-fx-background-color: red;");
 
         imageView = new ImageView();
         imageView.setFitWidth(200);
@@ -73,17 +75,18 @@ public class RoomCell extends ListCell<Room> {
         StackPane.setAlignment(countPhotoHB, Pos.BOTTOM_RIGHT);
         StackPane.setMargin(countPhotoHB, new Insets(0, 10, 10, 0));
         countPhotoHB.setStyle("-fx-background-color: rgba(255, 255, 255, 0.7); -fx-background-radius: 12px;");
+        countPhotoHB.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
         ImageView emptyImage = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/default-image-directions.png"))));
-        emptyImage.setFitHeight(10);
-        emptyImage.setFitHeight(10);
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/empty-image.png"))));
+        emptyImage.setFitHeight(15);
+        emptyImage.setFitHeight(15);
         emptyImage.setPreserveRatio(true);
 
         countPhotoHB.getChildren().add(emptyImage);
 
         countImageLB = new Label();
-        countImageLB.setStyle("-fx-font-size: 9px; -fx-font-weight: bold;");
+        countImageLB.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;");
 
         countPhotoHB.getChildren().add(countImageLB);
 
@@ -122,9 +125,12 @@ public class RoomCell extends ListCell<Room> {
 
         basicInformationVB.getChildren().add(countRoomSleepingPlacesHB);
 
+        VBox bottomVB = new VBox();
+        bottomVB.setAlignment(Pos.BOTTOM_LEFT);
+        VBox.setVgrow(bottomVB, Priority.ALWAYS);
+
         HBox bottomHB = new HBox(2);
-        VBox.setVgrow(bottomHB, Priority.ALWAYS);
-        bottomHB.setAlignment(Pos.BOTTOM_LEFT);
+        bottomVB.getChildren().add(bottomHB);
 
         HBox aboutTheRoomHB = new HBox(3);
         aboutTheRoomHB.setStyle("-fx-background-color: rgba(255,230,255, 0.8); -fx-background-radius: 12px;");
@@ -151,12 +157,13 @@ public class RoomCell extends ListCell<Room> {
 
         bottomHB.getChildren().add(roomSquareLB);
 
-        basicInformationVB.getChildren().add(bottomHB);
+        basicInformationVB.getChildren().add(bottomVB);
 
         rootGP.getChildren().add(basicInformationVB);
 
         GridPane featuresGP = new GridPane();
         GridPane.setColumnIndex(featuresGP, 2);
+        featuresGP.setPrefWidth(200);
 
         ColumnConstraints col11 = new ColumnConstraints();
         col11.setPrefWidth(70);
@@ -241,10 +248,10 @@ public class RoomCell extends ListCell<Room> {
         rootGP.getChildren().add(featuresGP);
 
         VBox minPriceRoomVB = new VBox(5);
-        minPriceRoomVB.setPadding(new Insets(10));
         GridPane.setColumnIndex(minPriceRoomVB, 3);
         GridPane.setRowIndex(minPriceRoomVB, 0);
         minPriceRoomVB.setAlignment(Pos.TOP_LEFT);
+        minPriceRoomVB.setPrefWidth(220);
 
         HBox discountPriceHB = new HBox(3);
         discountPriceHB.setAlignment(Pos.CENTER_LEFT);
@@ -281,13 +288,17 @@ public class RoomCell extends ListCell<Room> {
 
         minPriceRoomVB.getChildren().add(actualPriceHB);
 
-        Button selectBtn = new Button("Выбрать");
-        selectBtn.setAlignment(Pos.BOTTOM_CENTER);
+        VBox selectVB = new VBox();
+        selectVB.setAlignment(Pos.BOTTOM_CENTER);
+        VBox.setVgrow(selectVB, Priority.ALWAYS);
+
+        Button selectBtn = new Button("К оформлению");
         selectBtn.getStyleClass().add("select-button");
         selectBtn.setPrefWidth(Double.MAX_VALUE);
-        VBox.setMargin(selectBtn, new Insets(0, 10, 10, 10));
 
-        minPriceRoomVB.getChildren().add(selectBtn);
+        selectVB.getChildren().add(selectBtn);
+
+        minPriceRoomVB.getChildren().add(selectVB);
 
         rootGP.getChildren().add(minPriceRoomVB);
     }

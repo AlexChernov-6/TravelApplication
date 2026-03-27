@@ -4,6 +4,7 @@ import com.example.travel.controllers.PopularDestinationsController;
 import com.example.travel.util.ConfigManager;
 import com.sun.net.httpserver.HttpServer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
@@ -11,14 +12,14 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 public class TravelApplication extends Application {
     private final ConfigManager manager = new ConfigManager();
+    public static Stage stageRoot;
     @Override
     public void start(Stage stage) throws IOException {
+        stageRoot = stage;
         Scene scene = new Scene(PopularDestinationsController.createShapePopularDestinations()
                 , manager.getWindowWidth(), manager.getWindowHeight());
         scene.getStylesheets().add("/styles.css");

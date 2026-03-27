@@ -152,7 +152,6 @@ public class HotelCell extends ListCell<Hotel> {
         imageViewHotel = new ImageView();
         imageViewHotel.setFitWidth(COLUMN_IMAGE_WIDTH);
         imageViewHotel.setFitHeight(GRID_HEIGHT);
-        //imageViewHotel.setPreserveRatio(true);
 
         Rectangle clip = new Rectangle(imageViewHotel.getFitWidth(), imageViewHotel.getFitHeight());
         clip.setArcWidth(25);
@@ -439,7 +438,9 @@ public class HotelCell extends ListCell<Hotel> {
         countLabel.setVisible(false);
         hotelFeaturesContainer.getChildren().add(countLabel);
         countLabel.textProperty().addListener((ob, oldV, newV) -> {
-            countLabel.setVisible(Integer.parseInt(newV) > 0);
+            try {
+                countLabel.setVisible(Integer.parseInt(newV) > 0);
+            } catch (NumberFormatException e) {}
         });
     }
 

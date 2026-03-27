@@ -1,5 +1,6 @@
 package com.example.travel.controllers;
 
+import com.example.travel.TravelApplication;
 import com.example.travel.models.Hotel;
 import com.example.travel.models.Review;
 import com.example.travel.models.Room;
@@ -43,7 +44,7 @@ public class HotelWindow extends ScrollPane {
     private Button closeBtn, closeCommentsBtn;
     private WebView webView;
 
-    private Label ratLB, ratString, countRev, nameUser, reviewDate, reviewComment;
+    private Label ratLB, ratString, countRev, nameUser, reviewDate, reviewComment, countRoom;
 
     private ListView<Review> reviewListView;
     private ListView<Room> roomListView;
@@ -129,8 +130,10 @@ public class HotelWindow extends ScrollPane {
         roomListView.getItems().clear();
         roomListView.getItems().addAll(new RoomService().getAllRowByHotelId(selectedHotel.getIdHotel()));
 
+        countRoom.setText("Найдено подходящих вариантов: " + roomListView.getItems().size());
+
         Platform.runLater(() -> {
-            roomListView.setPrefHeight(210 * roomListView.getItems().size());
+            roomListView.setPrefHeight(220 * roomListView.getItems().size());
         });
     }
 
@@ -321,6 +324,16 @@ public class HotelWindow extends ScrollPane {
             viewingImages.setMinWidth(newVal);
         });
 
+        TravelApplication.stageRoot.maximizedProperty().addListener((ob, oldV, newV) -> {
+            Platform.runLater(() -> {
+                double newVal = hotelInfoHeader.getWidth() - 30;
+                viewingImages.setPrefWidth(newVal);
+                viewingImages.setMaxWidth(newVal);
+                viewingImages.setMinWidth(newVal);
+            });
+            System.out.println("Изменен размер окна");
+        });
+
         hotelInfoHeader.getChildren().add(viewingImages);
 
         Platform.runLater(hotelInfoHeader::layout);
@@ -488,8 +501,9 @@ public class HotelWindow extends ScrollPane {
     }
 
     private void createListRooms() {
-        Label countRoom = new Label();
+        countRoom = new Label();
         countRoom.setStyle("-fx-font-size:26px; -fx-font-weight: bold;");
+        VBox.setMargin(countRoom, new Insets(0, 15, 0, 17));
         rootVB.getChildren().add(countRoom);
 
         roomListView = new ListView<>();
@@ -497,7 +511,7 @@ public class HotelWindow extends ScrollPane {
         roomListView.getStyleClass().add("list-view");
         roomListView.setCellFactory(cell -> new RoomCell());
         VBox.setMargin(roomListView, new Insets(0, 15, 0, 15));
-        roomListView.setStyle("-fx-background-color: white; -fx-background-radius: 12px;");
+        roomListView.setStyle("-fx-background-color: transparent;");
 
         roomListView.addEventFilter(ScrollEvent.SCROLL, event -> {
             Event redirectedEvent = event.copyFor(roomListView, rootVB);
