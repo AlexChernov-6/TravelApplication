@@ -18,6 +18,19 @@ public class RoomService extends BaseService<Room> {
         }
     }
 
+    public int countRoomByHotelId(int hotelID, double fromPrice, double beforePrice) {
+        String hql = "select count(*) from Room where hotel.idHotel = :HOTEL_ID and roomPrice >= :FROM_PRICE and roomPrice <= :BEFORE_PRICE";
+
+        try (Session session = BaseService.sessionFactory.openSession()) {
+            Long count = session.createQuery(hql, Long.class)
+                    .setParameter("HOTEL_ID", hotelID)
+                    .setParameter("FROM_PRICE", fromPrice)
+                    .setParameter("BEFORE_PRICE", beforePrice)
+                    .uniqueResult();
+            return count != null ? count.intValue() : 0;
+        }
+    }
+
     public List<Room> getAllRowByHotelId(int hotelId) {
         String hql = "from Room where hotel.idHotel = :HOTEL_ID";
 

@@ -30,21 +30,21 @@ public class FilterWindow extends AnchorPane {
     private Pane shadowPane;
     private VBox bodyVB;
     private long maxPriceDirection;
-    private final HashMap<RefundPolicy, Boolean> mapCancellation = new HashMap<>();
+    static final HashMap<RefundPolicy, Boolean> mapCancellation = new HashMap<>();
     private final HashMap<Object, Button> mapModelButtons = new HashMap<>();
 
-    private final HashMap<PaymentMethod, Boolean> mapPaymentMethods = new HashMap<>();
+    static final HashMap<PaymentMethod, Boolean> mapPaymentMethods = new HashMap<>();
     private ScrollPane bodySP;
     protected ObjectProperty<Predicate<Hotel>> filterPredicate = new SimpleObjectProperty<>();
 
-    private long fromPrice, beforePrice;
+    static Long fromPrice, beforePrice;
 
     private final List<Integer> countStartList = new ArrayList<>();
 
     private CustomRadioParent parent;
 
     private final List<String> hotelFeatures = new ArrayList<>();
-    private final List<String> roomFeatures = new ArrayList<>();
+    static final List<String> roomFeatures = new ArrayList<>();
 
     private TextField fromPriceTF, beforePriceTF;
 
@@ -54,8 +54,8 @@ public class FilterWindow extends AnchorPane {
 
     private List<CustomCheckButton> allCheckButtons = new ArrayList<>();
 
-    public FilterWindow(StackPane overlaySP) {
-        this.overlaySP = overlaySP;
+    public FilterWindow() {
+        this.overlaySP = PopularDestinationsController.getOverlaySP();
 
         this.maxPriceDirection = Math.round(new DirectionService()
                 .getMaxRoomPriceByDirectionId(PopularDestinationsController.oldPressedDirection.getIdDirection()));
@@ -190,7 +190,7 @@ public class FilterWindow extends AnchorPane {
             String oldText = change.getControlText();
             if (newText.matches("\\d*")) {
                 if (newText.isEmpty()) {
-                    fromPrice = 0;
+                    fromPrice = 0L;
                     if(fromPriceTF.isFocused()) {
                         change.setText("0");
                         change.setCaretPosition(1);
@@ -525,9 +525,7 @@ public class FilterWindow extends AnchorPane {
     }
 
     private boolean checkPrice(Hotel hotel) {
-        RoomService service = new RoomService();
-        double minPrice = service.getMinRoomPriceByHotelId(hotel.getIdHotel());
-        return minPrice >= fromPrice && minPrice <= beforePrice;
+        return new RoomService().countRoomByHotelId(hotel.getIdHotel(), fromPrice, beforePrice) != 0;
     }
 
     private boolean checkStar(Hotel hotel) {

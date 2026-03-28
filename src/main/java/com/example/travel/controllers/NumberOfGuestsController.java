@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 public class NumberOfGuestsController extends Button {
     int adultsCount = 2;
     int childrenCount = 0;
+    static int totalStatic;
 
     private static final double GRID_PANE_WIDTH = 250;
     private static final double GRID_PANE_HEIGHT = 150;
@@ -27,6 +28,7 @@ public class NumberOfGuestsController extends Button {
     private GuestCounter childrenCounter;
 
     public NumberOfGuestsController() {
+        totalStatic = adultsCount + childrenCount;
         updateButtonText();
         getStyleClass().add("number-of-guests");
 
@@ -120,6 +122,7 @@ public class NumberOfGuestsController extends Button {
 
     private void updateButtonText() {
         int total = adultsCount + childrenCount;
+        totalStatic = total;
         Predicate<Hotel> countGuestsPredicate = hotel ->
                 new RoomService().getMaxRoomSleepingPlaces(hotel.getIdHotel()) >= total;
 

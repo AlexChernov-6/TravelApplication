@@ -4,6 +4,7 @@ import com.example.travel.models.Hotel;
 import com.example.travel.models.HotelFeature;
 import com.example.travel.services.HotelFeatureRelationService;
 import com.example.travel.services.RoomService;
+import com.example.travel.util.HelpFullClass;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -479,6 +480,10 @@ public class HotelCell extends ListCell<Hotel> {
         hotelWindow = new HotelWindow();
         hotelWindow.setUserData("hotelWindow");
         hotelWindow.setVisible(false);
+        hotelWindow.setFitToWidth(true);
+        hotelWindow.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        hotelWindow.getStyleClass().add("scroll-pane");
+        new HelpFullClass().scrollPaneAnimation(hotelWindow);
         hotelWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
         hotelWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
         PopularDestinationsController.getOverlaySP().getChildren().add(hotelWindow);

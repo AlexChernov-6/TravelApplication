@@ -375,7 +375,7 @@ public class PopularDestinationsController {
         filterBtn.setPadding(new Insets(0));
         filterBtn.setOnAction(e -> {
             if (filterWindow == null) {
-                filterWindow = new FilterWindow(overlaySP);
+                filterWindow = new FilterWindow();
             } else {
                 if (!filterWindow.isVisible())
                     filterWindow.show();

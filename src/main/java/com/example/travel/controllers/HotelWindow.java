@@ -1,32 +1,28 @@
 package com.example.travel.controllers;
 
 import com.example.travel.TravelApplication;
-import com.example.travel.models.Hotel;
-import com.example.travel.models.Review;
-import com.example.travel.models.Room;
+import com.example.travel.models.*;
+import com.example.travel.services.DirectionService;
 import com.example.travel.services.ReviewService;
+import com.example.travel.services.RoomFeatureRelationService;
 import com.example.travel.services.RoomService;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
-import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 import static com.example.travel.controllers.HotelCell.*;
@@ -47,20 +43,13 @@ public class HotelWindow extends ScrollPane {
     private Label ratLB, ratString, countRev, nameUser, reviewDate, reviewComment, countRoom;
 
     private ListView<Review> reviewListView;
-    private ListView<Room> roomListView;
+    private VBox roomsContainer; // заменён ListView<Room>
 
     public HotelWindow() {
         rootVB = new VBox(15);
         rootVB.setPadding(new Insets(0, 0, 20, 0));
 
-        Platform.runLater(() -> {
-            new HelpFullClass().scrollPaneAnimation(this);
-        });
-        this.setContent(rootVB);
-        setFitToWidth(true);
-        setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
-        setHbarPolicy(ScrollBarPolicy.NEVER);
-        getStyleClass().add("scroll-pane");
+        setContent(rootVB);
 
         createBackBtn();
 
@@ -127,14 +116,25 @@ public class HotelWindow extends ScrollPane {
                 + " " + lDT.getYear());
         reviewComment.setText(bestReview.getComment());
 
-        roomListView.getItems().clear();
-        roomListView.getItems().addAll(new RoomService().getAllRowByHotelId(selectedHotel.getIdHotel()));
+        // Заполнение номеров
+        roomsContainer.getChildren().clear();
 
-        countRoom.setText("Найдено подходящих вариантов: " + roomListView.getItems().size());
+        List<Room> rooms = new RoomService().getAllRowByHotelId(selectedHotel.getIdHotel()).stream()
+                .filter(room -> room.getRoomSleepingPlaces() >= NumberOfGuestsController.totalStatic
+                        && (room.getRoomPrice() >= (FilterWindow.fromPrice != null ? FilterWindow.fromPrice : 0)
+                        && room.getRoomPrice() <= (FilterWindow.beforePrice != null ? FilterWindow.beforePrice : Math.round(new DirectionService()
+                        .getMaxRoomPriceByDirectionId(PopularDestinationsController.oldPressedDirection.getIdDirection()))))
+                        && checkCancellation(room) && checkPaymentMethod(room) /*&& checkRoomFeature(room)*/)
+                .sorted((r1, r2) -> r1.getRoomSleepingPlaces() - r2.getRoomSleepingPlaces())
+                .toList();
 
-        Platform.runLater(() -> {
-            roomListView.setPrefHeight(220 * roomListView.getItems().size());
-        });
+        for (Room room : rooms) {
+            RoomCard roomCard = new RoomCard();
+            roomCard.updateRoom(room);
+            roomsContainer.getChildren().add(roomCard);
+        }
+
+        countRoom.setText("Найдено подходящих вариантов: " + rooms.size());
     }
 
     private void createBackBtn() {
@@ -303,7 +303,7 @@ public class HotelWindow extends ScrollPane {
         GridPane.setColumnIndex(chooseRoom, 2);
         GridPane.setRowIndex(chooseRoom, 0);
         GridPane.setRowSpan(chooseRoom, 2);
-        chooseRoom.setPrefWidth(300);
+        chooseRoom.setPrefWidth(Double.MAX_VALUE);
         chooseRoom.getStyleClass().add("show-result-button");
         chooseRoom.setOnAction(e -> {
             //Обработать нажатие кнопки
@@ -331,7 +331,6 @@ public class HotelWindow extends ScrollPane {
                 viewingImages.setMaxWidth(newVal);
                 viewingImages.setMinWidth(newVal);
             });
-            System.out.println("Изменен размер окна");
         });
 
         hotelInfoHeader.getChildren().add(viewingImages);
@@ -506,20 +505,9 @@ public class HotelWindow extends ScrollPane {
         VBox.setMargin(countRoom, new Insets(0, 15, 0, 17));
         rootVB.getChildren().add(countRoom);
 
-        roomListView = new ListView<>();
-        roomListView.setSelectionModel(null);
-        roomListView.getStyleClass().add("list-view");
-        roomListView.setCellFactory(cell -> new RoomCell());
-        VBox.setMargin(roomListView, new Insets(0, 15, 0, 15));
-        roomListView.setStyle("-fx-background-color: transparent;");
-
-        roomListView.addEventFilter(ScrollEvent.SCROLL, event -> {
-            Event redirectedEvent = event.copyFor(roomListView, rootVB);
-            rootVB.fireEvent(redirectedEvent);
-            event.consume();
-        });
-
-        rootVB.getChildren().add(roomListView);
+        roomsContainer = new VBox(15); // отступ между ячейками
+        roomsContainer.setPadding(new Insets(0, 15, 0, 15));
+        rootVB.getChildren().add(roomsContainer);
     }
 
     private void createMap() {
@@ -608,5 +596,34 @@ public class HotelWindow extends ScrollPane {
         shadowPane.setVisible(false);
         closeBtn.setVisible(false);
         webView.setVisible(false);
+    }
+
+    private boolean checkCancellation(Room room) {
+        if (FilterWindow.mapCancellation.values().stream().filter(b -> b).toList().isEmpty())
+            return true;
+
+        return FilterWindow.mapCancellation.get(room.getRefundPolicy()) != null
+                && FilterWindow.mapCancellation.get(room.getRefundPolicy());
+    }
+
+    private boolean checkPaymentMethod(Room room) {
+        if (FilterWindow.mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty())
+            return true;
+
+        return FilterWindow.mapPaymentMethods.get(room.getPaymentMethod()) != null
+                && FilterWindow.mapPaymentMethods.get(room.getPaymentMethod());
+    }
+
+    private boolean checkRoomFeature(Room room) {
+        if(FilterWindow.roomFeatures.isEmpty())
+            return  true;
+
+        RoomFeatureRelationService service = new RoomFeatureRelationService();
+        List<RoomFeature> allRoomFeatureByRoomId = service.getAllRoomFeatureByRoomId(room.getIdRooms());
+
+        List<RoomFeature> result = allRoomFeatureByRoomId.stream()
+                .filter(roomFeature -> FilterWindow.roomFeatures.contains(roomFeature.getFeatureName())).toList();
+
+        return result.size() == FilterWindow.roomFeatures.size();
     }
 }

@@ -19,4 +19,12 @@ public class RoomFeatureRelationService extends BaseService<RoomFeatureRelation>
             return session.createQuery(hql, RoomFeature.class).setParameter("ID_HOTEL", idHotel).list();
         }
     }
+
+    public List<RoomFeature> getAllRoomFeatureByRoomId(int roomId) {
+        String hql = "select roomFeature from RoomFeatureRelation where room.idRooms = :ID_ROOM";
+
+        try (Session session = BaseService.sessionFactory.openSession()) {
+            return session.createQuery(hql, RoomFeature.class).setParameter("ID_ROOM", roomId).list();
+        }
+    }
 }
