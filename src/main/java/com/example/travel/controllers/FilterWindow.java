@@ -486,23 +486,26 @@ public class FilterWindow extends AnchorPane {
         getChildren().addAll(resetBtn, showResultBtn);
     }
 
-    private static void ensureVisible(ScrollPane scrollPane, Node node) {
-        Bounds viewport = scrollPane.getViewportBounds();
-        double contentHeight = scrollPane.getContent().localToScene(scrollPane.getContent().getBoundsInLocal()).getHeight();
-        double nodeMinY = node.localToScene(node.getBoundsInLocal()).getMinY();
-        double nodeMaxY = node.localToScene(node.getBoundsInLocal()).getMaxY();
+    static void ensureVisible(ScrollPane scrollPane, Node node) {
+        Node content = scrollPane.getContent();
+        if (content == null) return;
 
-        double vValueDelta = 0;
-        double vValueCurrent = scrollPane.getVvalue();
+        double viewportHeight = scrollPane.getViewportBounds().getHeight();
+        double contentHeight = content.getBoundsInLocal().getHeight();
 
-        if (nodeMaxY < 0) {
-            // currently located above (remember, top left is (0,0))
-            vValueDelta = (nodeMinY - viewport.getHeight()) / contentHeight;
-        } else if (nodeMinY > viewport.getHeight()) {
-            // currently located below
-            vValueDelta = (nodeMinY + viewport.getHeight()) / contentHeight;
-        }
-        scrollPane.setVvalue(vValueCurrent + vValueDelta);
+        if (contentHeight <= viewportHeight) return;
+
+        Bounds nodeBoundsInScene = node.localToScene(node.getBoundsInLocal());
+        Bounds contentBoundsInScene = content.localToScene(content.getBoundsInLocal());
+
+        double topY = nodeBoundsInScene.getMinY() - contentBoundsInScene.getMinY();
+
+        double maxVvalue = contentHeight - viewportHeight;
+
+        double newVvalue = topY / maxVvalue;
+        newVvalue = Math.max(0, Math.min(1, newVvalue));
+
+        scrollPane.setVvalue(newVvalue);
     }
 
     private void createLine(VBox parent) {

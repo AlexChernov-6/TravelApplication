@@ -482,6 +482,7 @@ public class HotelCell extends ListCell<Hotel> {
         hotelWindow.setVisible(false);
         hotelWindow.setFitToWidth(true);
         hotelWindow.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        hotelWindow.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         hotelWindow.getStyleClass().add("scroll-pane");
         new HelpFullClass().scrollPaneAnimation(hotelWindow);
         hotelWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());

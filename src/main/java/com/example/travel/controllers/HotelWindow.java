@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
+import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 
@@ -306,7 +307,7 @@ public class HotelWindow extends ScrollPane {
         chooseRoom.setPrefWidth(Double.MAX_VALUE);
         chooseRoom.getStyleClass().add("show-result-button");
         chooseRoom.setOnAction(e -> {
-            //Обработать нажатие кнопки
+            ensureVisible(this, countRoom);
         });
 
         hotelInfoHeader.getChildren().add(chooseRoom);
