@@ -6,7 +6,6 @@ import com.example.travel.util.HelpFullClass;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -351,16 +350,22 @@ public class FilterWindow extends AnchorPane {
 
         parent = new CustomRadioParent();
 
-        CustomRadioButton aboveFore = new CustomRadioButton(parent, 4, false);
+        CustomRadioButton aboveFore = new CustomRadioButton(parent, false);
         aboveFore.addStyleButtonText("above-fore");
+        aboveFore.setTextBtn("Выше 4");
+        aboveFore.setUserData(4.0);
 
-        CustomRadioButton aboveThree = new CustomRadioButton(parent, 3, false);
+        CustomRadioButton aboveThree = new CustomRadioButton(parent, false);
         aboveThree.addStyleButtonText("above-three");
+        aboveThree.setTextBtn("Выше 3");
+        aboveThree.setUserData(3.0);
 
-        CustomRadioButton aboveTwo = new CustomRadioButton(parent, 2, false);
+        CustomRadioButton aboveTwo = new CustomRadioButton(parent, false);
         aboveTwo.addStyleButtonText("above-two");
+        aboveTwo.setTextBtn("Выше 2");
+        aboveThree.setUserData(2.0);
 
-        anyRating = new CustomRadioButton(parent, 0, true);
+        anyRating = new CustomRadioButton(parent, true);
         anyRating.addStyleButtonText("any-rating");
 
         ratingVB.getChildren().addAll(aboveFore, aboveThree, aboveTwo, anyRating);
@@ -519,11 +524,11 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void filteredData() {
-        filterPredicate.bind(Bindings.createObjectBinding(() -> hotel -> checkPrice(hotel) && checkStar(hotel)
-                && checkRat(hotel) && checkCancellation(hotel) && checkPaymentMethod(hotel)
-                && checkHotelFeature(hotel) && checkRoomFeature(hotel)));
+        Predicate<Hotel> hotelPredicate = hotel -> checkPrice(hotel) && checkStar(hotel)
+                && checkRat(hotel) && checkCancellationAndPaymentMethod(hotel)
+                && checkHotelFeature(hotel) && checkRoomFeature(hotel);
 
-        PopularDestinationsController.filteres.put("FilterWindow", filterPredicate.get());
+        PopularDestinationsController.filteres.put("FilterWindow", hotelPredicate);
         updatePredicateFilteredHotels();
     }
 
@@ -540,32 +545,32 @@ public class FilterWindow extends AnchorPane {
     private boolean checkRat(Hotel hotel) {
         double selectedRat = 0.0;
         for(CustomRadioButton button : parent.getCustomRadioButtonList()) {
-            if (button.getSelected())
-                selectedRat = button.getRat();
+            if (button.getSelected() && button.getUserData() != null)
+                selectedRat = (Double) button.getUserData();
         }
         return hotel.getHotelRating() >= selectedRat;
     }
 
-    private boolean checkCancellation(Hotel hotel) {
-        if (mapCancellation.values().stream().filter(b -> b).toList().isEmpty())
-            return true;
-
+    private boolean checkCancellationAndPaymentMethod(Hotel hotel) {
         RoomService roomService = new RoomService();
-        List<Room> res = roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
-                .filter(r -> mapCancellation.get(r.getRefundPolicy()) != null
-                        && mapCancellation.get(r.getRefundPolicy())).toList();
-        return !res.isEmpty();
-    }
-
-    private boolean checkPaymentMethod(Hotel hotel) {
-        if (mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty())
+        int total = NumberOfGuestsController.totalStatic;
+        if (mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty()
+                && mapCancellation.values().stream().filter(b -> b).toList().isEmpty())
             return true;
-
-        RoomService roomService = new RoomService();
-        List<Room> res = roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
-                .filter(r -> mapPaymentMethods.get(r.getPaymentMethod()) != null
-                        && mapPaymentMethods.get(r.getPaymentMethod())).toList();
-        return !res.isEmpty();
+        else if (mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty()) {
+            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
+                    .filter(r -> mapCancellation.get(r.getRefundPolicy()) != null
+                            && mapCancellation.get(r.getRefundPolicy()) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
+        } else if (mapCancellation.values().stream().filter(b -> b).toList().isEmpty()) {
+            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
+                    .filter(r -> mapPaymentMethods.get(r.getPaymentMethod()) != null
+                            && mapPaymentMethods.get(r.getPaymentMethod()) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
+        } else {
+            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
+                    .filter(r -> (mapPaymentMethods.get(r.getPaymentMethod()) != null
+                            && mapPaymentMethods.get(r.getPaymentMethod())) && (mapCancellation.get(r.getRefundPolicy()) != null
+                            && mapCancellation.get(r.getRefundPolicy())) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
+        }
     }
 
     private boolean checkHotelFeature(Hotel hotel) {

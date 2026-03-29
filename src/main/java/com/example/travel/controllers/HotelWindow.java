@@ -8,10 +8,14 @@ import com.example.travel.services.RoomFeatureRelationService;
 import com.example.travel.services.RoomService;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -44,7 +48,13 @@ public class HotelWindow extends ScrollPane {
     private Label ratLB, ratString, countRev, nameUser, reviewDate, reviewComment, countRoom;
 
     private ListView<Review> reviewListView;
-    private VBox roomsContainer; // заменён ListView<Room>
+    private VBox roomsContainer;
+
+    private SorterWindow sorterWindow;
+    private SortedList<Review> sortedList;
+    private ObservableList<Review> roomObservableList;
+
+    private VBox contVB;
 
     public HotelWindow() {
         rootVB = new VBox(15);
@@ -125,7 +135,7 @@ public class HotelWindow extends ScrollPane {
                         && (room.getRoomPrice() >= (FilterWindow.fromPrice != null ? FilterWindow.fromPrice : 0)
                         && room.getRoomPrice() <= (FilterWindow.beforePrice != null ? FilterWindow.beforePrice : Math.round(new DirectionService()
                         .getMaxRoomPriceByDirectionId(PopularDestinationsController.oldPressedDirection.getIdDirection()))))
-                        && checkCancellation(room) && checkPaymentMethod(room) /*&& checkRoomFeature(room)*/)
+                        && checkPaymentMethod(room) && checkCancellation(room) /*&& checkRoomFeature(room)*/)
                 .sorted((r1, r2) -> r1.getRoomSleepingPlaces() - r2.getRoomSleepingPlaces())
                 .toList();
 
@@ -160,6 +170,13 @@ public class HotelWindow extends ScrollPane {
         buttonHB.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 setVisible(false);
+                Platform.runLater(() -> {
+                    System.out.println("VPosScroll = " + PopularDestinationsController.VPosScroll);
+                    System.out.println("rootScrollPane.Vmax = " + PopularDestinationsController.rootScrollPane.getVmax());
+                    System.out.println("rootScrollPane.Height = " + PopularDestinationsController.rootScrollPane.getHeight());
+                    System.out.println("rootScrollPane.ContentLayoutBounds = " + PopularDestinationsController.rootScrollPane.getContent().getLayoutBounds());
+                    PopularDestinationsController.rootScrollPane.setVvalue(PopularDestinationsController.VPosScroll);
+                });
             }
         });
 
@@ -465,8 +482,46 @@ public class HotelWindow extends ScrollPane {
 
         overSP.getChildren().add(closeCommentsBtn);
 
+        contVB = new VBox(10);
+        contVB.maxWidthProperty().bind(overSP.widthProperty().divide(1.3));
+        contVB.maxHeightProperty().bind(overSP.heightProperty().subtract(60));
+
+        Button sortBtn = new Button();
+        sortBtn.setPrefHeight(35);
+        sortBtn.getStyleClass().add("custom-button");
+        sortBtn.setPadding(new Insets(0));
+        sortBtn.setOnAction(e -> {
+            if (sorterWindow == null) {
+                sorterWindow = new SorterWindow();
+                sorterWindow.setShape(createShape());
+                sorterWindow.show(sortBtn);
+            } else {
+                if (!sorterWindow.getPopup().isShowing())
+                    sorterWindow.show(sortBtn);
+                else
+                    sorterWindow.hide();
+            }
+        });
+
+        HBox backgroundHBSort = new HBox();
+        backgroundHBSort.getStyleClass().add("sort-button-hbox");
+        backgroundHBSort.setAlignment(Pos.CENTER);
+        backgroundHBSort.setPadding(new Insets(10));
+
+        ImageView imageSort = new ImageView(
+                new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/sort.png")))
+        );
+        imageSort.setFitHeight(20);
+        imageSort.setFitWidth(20);
+        imageSort.setPreserveRatio(true);
+
+        backgroundHBSort.getChildren().add(imageSort);
+        sortBtn.setGraphic(backgroundHBSort);
+
+        contVB.getChildren().add(sortBtn);
+
         reviewListView = new ListView<>();
-        reviewListView.setVisible(false);
+        VBox.setVgrow(reviewListView, Priority.ALWAYS);
         reviewListView.setCellFactory(cell -> new ReviewCell());
         reviewListView.getStyleClass().addAll("list-view", "scroll-pane");
         reviewListView.setSelectionModel(null);
@@ -474,30 +529,30 @@ public class HotelWindow extends ScrollPane {
             new HelpFullClass().scrollPaneAnimation(reviewListView);
         });
 
-        reviewListView.getItems().addAll(new ReviewService().getAllReviewByHotelId(selectedHotel.getIdHotel()).stream()
-                .filter(review -> review.getComment() != null).sorted((rev1, rev2)
-                        -> rev2.getRating() - rev1.getRating()).toList());
-        reviewListView.maxWidthProperty().bind(overSP.widthProperty().divide(1.3));
-        reviewListView.maxHeightProperty().bind(overSP.heightProperty().subtract(60));
+        roomObservableList = FXCollections.observableList(
+                new ReviewService().getAllReviewByHotelId(selectedHotel.getIdHotel()));
 
-        overSP.getChildren().add(reviewListView);
+        sortedList = new SortedList<>(roomObservableList, (rev1, rev2) -> rev2.getRating() - rev1.getRating());
+
+        reviewListView.setItems(sortedList);
+
+        contVB.getChildren().add(reviewListView);
+
+        overSP.getChildren().add(contVB);
     }
 
     private void hideReviews() {
         closeCommentsBtn.setVisible(false);
-        reviewListView.setVisible(false);
+        contVB.setVisible(false);
         shadowPane.setVisible(false);
     }
 
     private void showReviews() {
         closeCommentsBtn.setVisible(true);
-        reviewListView.setVisible(true);
+        contVB.setVisible(true);
         shadowPane.setVisible(true);
 
-        reviewListView.getItems().clear();
-        reviewListView.getItems().addAll(new ReviewService().getAllReviewByHotelId(selectedHotel.getIdHotel()).stream()
-                .filter(review -> review.getComment() != null).sorted((rev1, rev2)
-                        -> rev2.getRating() - rev1.getRating()).toList());
+        roomObservableList.setAll(new ReviewService().getAllReviewByHotelId(selectedHotel.getIdHotel()));
     }
 
     private void createListRooms() {
@@ -506,7 +561,7 @@ public class HotelWindow extends ScrollPane {
         VBox.setMargin(countRoom, new Insets(0, 15, 0, 17));
         rootVB.getChildren().add(countRoom);
 
-        roomsContainer = new VBox(15); // отступ между ячейками
+        roomsContainer = new VBox(10); // отступ между ячейками
         roomsContainer.setPadding(new Insets(0, 15, 0, 15));
         rootVB.getChildren().add(roomsContainer);
     }
@@ -626,5 +681,32 @@ public class HotelWindow extends ScrollPane {
                 .filter(roomFeature -> FilterWindow.roomFeatures.contains(roomFeature.getFeatureName())).toList();
 
         return result.size() == FilterWindow.roomFeatures.size();
+    }
+
+    private Node[] createShape() {
+        CustomRadioParent sortedReviews = new CustomRadioParent();
+
+        CustomRadioButton higher = new CustomRadioButton(sortedReviews, true);
+        higher.setTextBtn("Сначала более высокие");
+        higher.addSecondAction(event -> {
+            sortedList.setComparator((rev1, rev2) -> rev2.getRating() - rev1.getRating());
+            sorterWindow.hide();
+        });
+
+        CustomRadioButton below = new CustomRadioButton(sortedReviews, false);
+        below.setTextBtn("Сначала более низкие");
+        below.addSecondAction(event -> {
+            sortedList.setComparator((rev1, rev2) -> rev1.getRating() - rev2.getRating());
+            sorterWindow.hide();
+        });
+
+        CustomRadioButton newer = new CustomRadioButton(sortedReviews, false);
+        newer.setTextBtn("Сначала более новые");
+        newer.addSecondAction(event -> {
+            sortedList.setComparator((rev1, rev2) -> rev2.getCratedAt().compareTo(rev1.getCratedAt()));
+            sorterWindow.hide();
+        });
+
+        return new Node[] {higher, below, newer};
     }
 }

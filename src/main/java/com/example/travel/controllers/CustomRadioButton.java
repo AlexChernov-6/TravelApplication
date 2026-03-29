@@ -1,6 +1,8 @@
 package com.example.travel.controllers;
 
 import com.example.travel.models.Hotel;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -11,19 +13,17 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-import java.util.Comparator;
-
 public class CustomRadioButton extends Button {
     private StackPane circleStackPane;
     private Circle ring;
     private Circle circle;
     private Boolean isSelected;
     private Label buttonText;
-    private double rat;
 
-    public CustomRadioButton(CustomRadioParent parent, double rat, boolean isStartValue) {
+    private EventHandler<ActionEvent> secondEvent;
+
+    public CustomRadioButton(CustomRadioParent parent, boolean isStartValue) {
         this.isSelected = isStartValue;
-        this.rat = rat;
         parent.getCustomRadioButtonList().add(this);
         getStyleClass().add("custom-button");
 
@@ -44,10 +44,7 @@ public class CustomRadioButton extends Button {
 
         buttonText = new Label();
         buttonText.getStyleClass().add("sort-button-text");
-        if (rat > 0)
-            buttonText.setText("Выше " + String.format("%.1f", rat));
-        else
-            buttonText.setText("Любой рейтинг");
+        buttonText.setText("Любой рейтинг");
 
         rootHB.getChildren().addAll(circleStackPane, buttonText);
 
@@ -63,8 +60,8 @@ public class CustomRadioButton extends Button {
                 ring.setStroke(Color.rgb(150, 150, 150));
         });
 
-        setOnAction(e -> {
-            for(CustomRadioButton node : parent.getCustomRadioButtonList()) {
+        addEventHandler(ActionEvent.ACTION, event -> {
+            for (CustomRadioButton node : parent.getCustomRadioButtonList()) {
                 node.removeFocused();
                 node.setSelected(false);
             }
@@ -98,6 +95,10 @@ public class CustomRadioButton extends Button {
         buttonText.getStyleClass().add(styleClass);
     }
 
+    public void setTextBtn(String str) {
+        buttonText.setText(str);
+    }
+
     public void setSelected(Boolean selected) {
         isSelected = selected;
     }
@@ -106,7 +107,10 @@ public class CustomRadioButton extends Button {
         return isSelected;
     }
 
-    public double getRat() {
-        return rat;
+    public void addSecondAction(EventHandler<ActionEvent> event) {
+        if(secondEvent != null)
+            removeEventHandler(ActionEvent.ACTION, event);
+
+        addEventHandler(ActionEvent.ACTION, event);
     }
 }

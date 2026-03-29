@@ -372,6 +372,13 @@ public class HotelCell extends ListCell<Hotel> {
         selectBtn.setMaxWidth(Double.MAX_VALUE);
         GridPane.setFillWidth(selectBtn, true);
         GridPane.setMargin(selectBtn, new Insets(0, 30, 30, 10));
+        selectBtn.setOnAction(e -> {
+            if(PopularDestinationsController.getOverlaySP().getChildren().stream().filter(
+                    node -> node.getUserData() != null && node.getUserData().equals("hotelWindow")).toList().isEmpty())
+                createHotelWindow();
+
+            showHotelWindow();
+        });
 
         rootGridPane.getChildren().add(selectBtn);
 

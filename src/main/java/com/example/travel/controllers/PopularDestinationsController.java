@@ -50,7 +50,7 @@ public class PopularDestinationsController {
     private static Button backBtn, stickyBackBtn;
     private static TilePane popularDestinationsTP;
     private static boolean isStickyMode;
-    private static ScrollPane rootScrollPane;
+    protected static ScrollPane rootScrollPane;
     private static ObservableList<Hotel> observableHotels;
     private static FilteredList<Hotel> filteredHotels;
     private static SortedContext sortedContext = SortedContext.BY_DEFAULT;
@@ -71,6 +71,8 @@ public class PopularDestinationsController {
 
     private static ConfigManager configManager = new ConfigManager();
 
+    public static double VPosScroll = 0.0;
+
     public enum SortedContext {
         BY_DEFAULT,
         MORE_EXPENSIVE,
@@ -88,6 +90,10 @@ public class PopularDestinationsController {
         rootScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         rootScrollPane.getStyleClass().add("scroll-pane");
         new HelpFullClass().scrollPaneAnimation(rootScrollPane);
+
+        rootScrollPane.vvalueProperty().addListener((ob, oldV, newV) -> {
+            VPosScroll = newV.doubleValue();
+        });
 
         overlaySP.getChildren().add(rootScrollPane);
 
@@ -478,6 +484,14 @@ public class PopularDestinationsController {
                 node.setVisible(true);
                 node.setManaged(true);
             }
+        });
+
+        Platform.runLater(() -> {
+            System.out.println("VPosScroll = " + VPosScroll);
+            System.out.println("rootScrollPane.Vmax = " + rootScrollPane.getVmax());
+            System.out.println("rootScrollPane.Height = " + rootScrollPane.getHeight());
+            System.out.println("rootScrollPane.ContentLayoutBounds = " + rootScrollPane.getContent().getLayoutBounds());
+            rootScrollPane.setVvalue(VPosScroll);
         });
     }
 

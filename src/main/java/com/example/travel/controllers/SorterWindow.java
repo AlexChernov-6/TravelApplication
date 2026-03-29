@@ -2,17 +2,15 @@ package com.example.travel.controllers;
 
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 
 public class SorterWindow extends VBox {
 
     private final Popup popup;
-    private boolean alreadyHasHandler = false;
 
     public SorterWindow() {
         getStyleClass().add("popup");
@@ -23,9 +21,9 @@ public class SorterWindow extends VBox {
         Label sortLabel = new Label("Сортировка");
         sortLabel.getStyleClass().add("sort-label");
 
-        Button defaultSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.BY_DEFAULT, this);
-        Button cheaperSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.CHEAPER, this);
-        Button moreExpensiveSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.MORE_EXPENSIVE, this);
+        CustomSelectedBtn defaultSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.BY_DEFAULT, this);
+        CustomSelectedBtn cheaperSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.CHEAPER, this);
+        CustomSelectedBtn moreExpensiveSort = new CustomSelectedBtn(PopularDestinationsController.SortedContext.MORE_EXPENSIVE, this);
 
         getChildren().addAll(sortLabel, defaultSort, cheaperSort, moreExpensiveSort);
 
@@ -51,5 +49,11 @@ public class SorterWindow extends VBox {
 
     public Popup getPopup() {
         return popup;
+    }
+
+    public void setShape(Node... nodes) {
+        getChildren().removeIf(node -> node instanceof CustomSelectedBtn);
+
+        getChildren().addAll(nodes);
     }
 }
