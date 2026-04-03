@@ -1,12 +1,19 @@
 package com.example.travel.controllers;
 
 import com.example.travel.models.Room;
+import com.example.travel.util.HelpFullClass;
+import com.example.travel.util.ImageUtils;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -23,8 +30,16 @@ public class RoomCard extends VBox {
     private ImageView mealPlanIV, refundPolicyIV, paymentMethodIV;
     private Text actualPriceLB;
 
+    private Room room;
+    private Button prevImageBtn, nextImageBtn;
+    private ImageView imageViewRoom;
+
+    private double widthWin = 600.0;
+    private Pane shadowPane;
+    private ScrollPane infoRoomScrollPane;
+    private Button closeBtn;
+
     public RoomCard() {
-        setPadding(new Insets(0, 0, 20, 0));
         rootGP = new GridPane();
         rootGP.setPrefHeight(200);
         rootGP.setStyle("-fx-background-color: white; -fx-background-radius: 12px;");
@@ -52,7 +67,6 @@ public class RoomCard extends VBox {
 
         rootGP.getColumnConstraints().addAll(col1, col2, col3, col4);
 
-        // Фото
         StackPane photosStackPane = new StackPane();
         photosStackPane.setPrefWidth(200);
         photosStackPane.setPrefHeight(200);
@@ -60,14 +74,14 @@ public class RoomCard extends VBox {
         imageView = new ImageView();
         imageView.setFitWidth(200);
         imageView.setFitHeight(200);
-
-        Rectangle clip = new Rectangle();
-        clip.setWidth(200);
-        clip.setHeight(200);
-        clip.setArcWidth(30);
-        clip.setArcHeight(30);
-
-        imageView.setClip(clip);
+        ImageUtils.round(imageView, 30, 30, 30, 30);
+        imageView.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if(infoRoomScrollPane == null)
+                    createWinAboutTheRoom();
+                show();
+            }
+        });
 
         photosStackPane.getChildren().add(imageView);
 
@@ -135,10 +149,17 @@ public class RoomCard extends VBox {
         bottomVB.getChildren().add(bottomHB);
 
         HBox aboutTheRoomHB = new HBox(3);
-        aboutTheRoomHB.setStyle("-fx-background-color: rgba(255,230,255, 0.8); -fx-background-radius: 12px;");
+        aboutTheRoomHB.setStyle("-fx-background-color: rgba(255,230,255, 0.8); -fx-background-radius: 12px; -fx-cursor: hand;");
         aboutTheRoomHB.setPadding(new Insets(2, 8, 2, 8));
         aboutTheRoomHB.setAlignment(Pos.CENTER_LEFT);
         aboutTheRoomHB.setPrefHeight(20);
+        aboutTheRoomHB.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if(infoRoomScrollPane == null)
+                    createWinAboutTheRoom();
+                show();
+            }
+        });
 
         Label aboutTheRoomLB = new Label("O номере");
         aboutTheRoomLB.setStyle("-fx-text-fill: rgba(176, 60, 176);");
@@ -323,6 +344,8 @@ public class RoomCard extends VBox {
     public void updateRoom(Room room) {
         if (room == null) return;
 
+        this.room = room;
+
         imageView.setImage(room.getImageByNumber(0));
         countImageLB.setText(String.format("%d фото", room.getRoomPhotos().length));
         nameRoom.setText(room.getRoomName());
@@ -359,5 +382,185 @@ public class RoomCard extends VBox {
 
         paymentMethodIV.setImage(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/payment.png"))));
+    }
+
+    private void createWinAboutTheRoom() {
+        StackPane overSP = PopularDestinationsController.getOverlaySP();
+        shadowPane = new Pane();
+        shadowPane.setVisible(false);
+        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
+
+        overSP.getChildren().add(shadowPane);
+
+        closeBtn = new Button();
+        closeBtn.setPrefHeight(30);
+        closeBtn.setPrefWidth(30);
+        StackPane.setAlignment(closeBtn, Pos.TOP_RIGHT);
+        StackPane.setMargin(closeBtn, new Insets(15, 15, 0, 0));
+        closeBtn.getStyleClass().add("close-button");
+        closeBtn.setOnAction(event -> {
+            hide();
+        });
+
+        ImageView closeImg = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/close.png"))));
+        closeImg.setFitHeight(15);
+        closeImg.setFitWidth(15);
+        closeImg.setPreserveRatio(true);
+
+        closeBtn.setGraphic(closeImg);
+
+        overSP.getChildren().add(closeBtn);
+
+        infoRoomScrollPane = new ScrollPane();
+        infoRoomScrollPane.setVisible(false);
+        infoRoomScrollPane.setMaxWidth(widthWin + 10);
+        infoRoomScrollPane.maxHeightProperty().bind(overSP.heightProperty().subtract(70));
+        StackPane.setAlignment(infoRoomScrollPane, Pos.BOTTOM_CENTER);
+        infoRoomScrollPane.setFitToWidth(true);
+        infoRoomScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        infoRoomScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        infoRoomScrollPane.getStyleClass().addAll("scroll-pane", "scroll-pane-transparent");
+        Platform.runLater(() -> {
+            new HelpFullClass().scrollPaneAnimation(infoRoomScrollPane);
+        });
+
+        overSP.getChildren().add(infoRoomScrollPane);
+
+        VBox infoRoomVB = new VBox(5);
+        infoRoomVB.setStyle("-fx-background-color: white; -fx-background-radius: 15 15 0 0;");
+        infoRoomVB.setMaxWidth(widthWin);
+        infoRoomVB.prefHeightProperty().bind(infoRoomScrollPane.heightProperty());
+
+        infoRoomScrollPane.setContent(infoRoomVB);
+
+        StackPane photoSP = new StackPane();
+        photoSP.setStyle("-fx-background-radius: 15px;");
+
+        imageViewRoom = new ImageView();
+        imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
+        imageViewRoom.setFitWidth(widthWin - 1.6);
+        imageViewRoom.setPreserveRatio(true);
+        ImageUtils.round(imageViewRoom, 30, 30, 30, 30);
+
+        Platform.runLater(() -> {
+            photoSP.setMaxHeight(imageViewRoom.getLayoutBounds().getHeight());
+            photoSP.setMaxWidth(infoRoomVB.getWidth());
+        });
+
+        prevImageBtn = new Button();
+        prevImageBtn.getStyleClass().add("scroll-button");
+        prevImageBtn.setPrefHeight(20);
+        prevImageBtn.setPrefWidth(20);
+        StackPane.setMargin(prevImageBtn, new Insets(0, 0, 0, 10));
+        StackPane.setAlignment(prevImageBtn, Pos.CENTER_LEFT);
+        prevImageBtn.setVisible(false);
+        prevImageBtn.setOnAction(e -> {
+            if (room != null) {
+                int newIndex = room.getCurrentImageIndex() - 1;
+                room.setCurrentImageIndex(newIndex);
+                updateVisibleButton();
+            }
+        });
+
+        prevImageBtn.setOnMouseEntered(event -> {
+            prevImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.7);");
+            prevImageBtn.setPrefHeight(27);
+            prevImageBtn.setPrefWidth(27);
+        });
+
+        prevImageBtn.setOnMouseExited(event -> {
+            prevImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.5);");
+            prevImageBtn.setPrefHeight(20);
+            prevImageBtn.setPrefWidth(20);
+        });
+
+        ImageView prevImageIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/left-arrow.png"))));
+        prevImageIV.setFitHeight(10);
+        prevImageIV.setFitWidth(10);
+        prevImageIV.setPreserveRatio(true);
+
+        prevImageBtn.setGraphic(prevImageIV);
+
+        nextImageBtn = new Button();
+        nextImageBtn.getStyleClass().add("scroll-button");
+        nextImageBtn.setPrefHeight(20);
+        nextImageBtn.setPrefWidth(20);
+        StackPane.setMargin(nextImageBtn, new Insets(0, 10, 0, 0));
+        StackPane.setAlignment(nextImageBtn, Pos.CENTER_RIGHT);
+        nextImageBtn.setVisible(false);
+        nextImageBtn.setOnAction(e -> {
+            if (room != null) {
+                int newIndex = room.getCurrentImageIndex() + 1;
+                room.setCurrentImageIndex(newIndex);
+                updateVisibleButton();
+            }
+        });
+
+        nextImageBtn.setOnMouseEntered(event -> {
+            nextImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.7);");
+            nextImageBtn.setPrefHeight(27);
+            nextImageBtn.setPrefWidth(27);
+        });
+
+        nextImageBtn.setOnMouseExited(event -> {
+            nextImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.5);");
+            nextImageBtn.setPrefHeight(20);
+            nextImageBtn.setPrefWidth(20);
+        });
+
+        ImageView nextImageIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/right-arrow.png"))));
+        nextImageIV.setFitHeight(10);
+        nextImageIV.setFitWidth(10);
+        nextImageIV.setPreserveRatio(true);
+
+        nextImageBtn.setGraphic(nextImageIV);
+
+        photoSP.setOnMouseEntered(e -> {
+            updateVisibleButton();
+        });
+
+        photoSP.setOnMouseExited(e -> {
+            prevImageBtn.setVisible(false);
+            nextImageBtn.setVisible(false);
+        });
+
+        photoSP.getChildren().addAll(imageViewRoom, prevImageBtn, nextImageBtn);
+
+        infoRoomVB.getChildren().add(photoSP);
+
+        overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!infoRoomScrollPane.isVisible()) return;
+
+            Point2D pointInWindow = infoRoomScrollPane.screenToLocal(event.getScreenX(), event.getScreenY());
+            if (pointInWindow != null && infoRoomScrollPane.contains(pointInWindow))
+                return;
+            else
+                hide();
+        });
+    }
+
+    private void updateVisibleButton() {
+        if (room == null) return;
+        int index = room.getCurrentImageIndex();
+        int max = room.getRoomPhotos().length - 1;
+        prevImageBtn.setVisible(index > 0);
+        nextImageBtn.setVisible(index < max);
+
+        imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
+    }
+
+    private void hide() {
+        shadowPane.setVisible(false);
+        infoRoomScrollPane.setVisible(false);
+        closeBtn.setVisible(false);
+    }
+
+    private void show() {
+        shadowPane.setVisible(true);
+        infoRoomScrollPane.setVisible(true);
+        closeBtn.setVisible(true);
     }
 }

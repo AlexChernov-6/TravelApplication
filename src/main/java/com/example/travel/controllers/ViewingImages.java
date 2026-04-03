@@ -4,6 +4,7 @@ import com.example.travel.models.Hotel;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -12,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 
 import java.util.Objects;
@@ -356,6 +358,23 @@ public class ViewingImages extends GridPane {
         anchorPane.getChildren().add(allImages);
 
         overSP.getChildren().add(anchorPane);
+
+        overSP.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if(!isVisible()) return;
+
+            Point2D pointInPrevBtn = prevImageBtn.screenToLocal(event.getScreenX(), event.getScreenY());
+            Point2D pointInNextBtn = nextImageBtn.screenToLocal(event.getScreenX(), event.getScreenY());
+            Point2D pointInListView = allImages.screenToLocal(event.getScreenX(), event.getScreenY());
+            Point2D pointInSelectedImageView = selectedIV.screenToLocal(event.getScreenX(), event.getScreenY());
+
+            if ((pointInPrevBtn != null && prevImageBtn.contains(pointInPrevBtn))
+                    || (pointInNextBtn != null && nextImageBtn.contains(pointInNextBtn))
+                    || (pointInListView != null && allImages.contains(pointInListView))
+                    || (pointInSelectedImageView != null && selectedIV.contains(pointInSelectedImageView)))
+                return;
+            else
+                hide();
+        });
     }
 
     public void show() {

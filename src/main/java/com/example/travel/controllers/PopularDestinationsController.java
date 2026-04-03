@@ -92,7 +92,8 @@ public class PopularDestinationsController {
         new HelpFullClass().scrollPaneAnimation(rootScrollPane);
 
         rootScrollPane.vvalueProperty().addListener((ob, oldV, newV) -> {
-            VPosScroll = newV.doubleValue();
+            if(popularDestinationsTP != null && popularDestinationsTP.isVisible())
+                VPosScroll = newV.doubleValue();
         });
 
         overlaySP.getChildren().add(rootScrollPane);
@@ -172,7 +173,7 @@ public class PopularDestinationsController {
         AnchorPane.setRightAnchor(profileBtn, 10.0);
         profileBtn.setOnAction(e -> {
             if(registrationWindow == null)
-                registrationWindow = new RegistrationWindow(overlaySP);
+                registrationWindow = new RegistrationWindow();
             else
                 registrationWindow.show();
         });
@@ -479,12 +480,8 @@ public class PopularDestinationsController {
         popularDestinationsTP.setVisible(true);
         popularDestinationsTP.setManaged(true);
 
-        popularDestinationsTP.getChildren().forEach(node -> {
-            if (node instanceof CustomDirection) {
-                node.setVisible(true);
-                node.setManaged(true);
-            }
-        });
+        rootScrollPane.applyCss();
+        rootScrollPane.layout();
 
         Platform.runLater(() -> {
             System.out.println("VPosScroll = " + VPosScroll);

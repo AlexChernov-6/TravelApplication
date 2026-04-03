@@ -18,7 +18,6 @@ import java.net.URI;
 import java.util.Objects;
 
 public class HelpFullClass {
-    private ScrollBar vBar;
 
     public static String getRussianMonthName(int month) {
         switch (month) {
@@ -78,48 +77,50 @@ public class HelpFullClass {
 
     public void scrollPaneAnimation(Node node) {
         Platform.runLater(() -> {
-            vBar = (ScrollBar) node.lookup(".scroll-bar:vertical");
-            vBar.setStyle("-fx-pref-width: 10;");
-            vBar.setOpacity(0.0);
+            ScrollBar vBar = (ScrollBar) node.lookup(".scroll-bar:vertical");
+            if(vBar != null) {
+                vBar.setStyle("-fx-pref-width: 10;");
+                vBar.setOpacity(0.0);
 
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
-            fadeIn.setToValue(1.0);
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
+                fadeIn.setToValue(1.0);
 
-            FadeTransition fadeOut = new FadeTransition(Duration.millis(600), vBar);
-            fadeOut.setToValue(0.0);
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(600), vBar);
+                fadeOut.setToValue(0.0);
 
-            PauseTransition hideTimer = new PauseTransition(Duration.seconds(2));
-            hideTimer.setOnFinished(event -> {
-                // По окончании таймера запускаем плавное исчезновение
-                // Останавливаем возможную анимацию появления
-                fadeIn.stop();
-                fadeOut.playFromStart();
-            });
+                PauseTransition hideTimer = new PauseTransition(Duration.seconds(2));
+                hideTimer.setOnFinished(event -> {
+                    // По окончании таймера запускаем плавное исчезновение
+                    // Останавливаем возможную анимацию появления
+                    fadeIn.stop();
+                    fadeOut.playFromStart();
+                });
 
-            Runnable showBar = () -> {
-                // Останавливаем текущие анимации
-                fadeOut.stop();
-                // Запускаем появление, если оно ещё не выполняется или opacity не полная
-                if (vBar.getOpacity() < 1.0) {
-                    fadeIn.playFromStart();
-                }
-                // Сбрасываем таймер скрытия
-                hideTimer.stop();
-                hideTimer.playFromStart();
-            };
+                Runnable showBar = () -> {
+                    // Останавливаем текущие анимации
+                    fadeOut.stop();
+                    // Запускаем появление, если оно ещё не выполняется или opacity не полная
+                    if (vBar.getOpacity() < 1.0) {
+                        fadeIn.playFromStart();
+                    }
+                    // Сбрасываем таймер скрытия
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                };
 
-            vBar.setOnMouseEntered(e -> showBar.run());
+                vBar.setOnMouseEntered(e -> showBar.run());
 
-            vBar.setOnMouseExited(e -> {
-                hideTimer.stop();
-                hideTimer.playFromStart();
-            });
+                vBar.setOnMouseExited(e -> {
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                });
 
-            vBar.valueProperty().addListener((ob, oldV, newV) -> {
-                if (oldV.doubleValue() != newV.doubleValue()) {
-                    showBar.run();
-                }
-            });
+                vBar.valueProperty().addListener((ob, oldV, newV) -> {
+                    if (oldV.doubleValue() != newV.doubleValue()) {
+                        showBar.run();
+                    }
+                });
+            }
         });
     }
 

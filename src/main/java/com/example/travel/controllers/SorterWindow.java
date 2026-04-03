@@ -12,6 +12,8 @@ public class SorterWindow extends VBox {
 
     private final Popup popup;
 
+    private boolean visible;
+
     public SorterWindow() {
         getStyleClass().add("popup");
         setPadding(new Insets(10, 15, 20, 15));
@@ -40,10 +42,12 @@ public class SorterWindow extends VBox {
             double x = bounds.getMinX() - 20;
             double y = bounds.getMaxY() - 15;
             popup.show(owner, x, y);
+            visible = true;
         }
     }
 
     public void hide() {
+        visible = false;
         popup.hide();
     }
 
@@ -55,5 +59,13 @@ public class SorterWindow extends VBox {
         getChildren().removeIf(node -> node instanceof CustomSelectedBtn);
 
         getChildren().addAll(nodes);
+    }
+
+    public boolean isVisible1() {
+        return visible;
+    }
+
+    public void setVisible1(boolean visible) {
+        this.visible = visible;
     }
 }

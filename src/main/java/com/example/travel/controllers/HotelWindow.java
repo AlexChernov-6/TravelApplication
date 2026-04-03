@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -20,6 +21,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebEngine;
@@ -67,6 +69,8 @@ public class HotelWindow extends ScrollPane {
         createHotelInformation();
 
         createReviews();
+
+        Platform.runLater(this::createListComments);
 
         createListRooms();
     }
@@ -170,13 +174,13 @@ public class HotelWindow extends ScrollPane {
         buttonHB.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 setVisible(false);
-                Platform.runLater(() -> {
+                /*Platform.runLater(() -> {
                     System.out.println("VPosScroll = " + PopularDestinationsController.VPosScroll);
                     System.out.println("rootScrollPane.Vmax = " + PopularDestinationsController.rootScrollPane.getVmax());
                     System.out.println("rootScrollPane.Height = " + PopularDestinationsController.rootScrollPane.getHeight());
                     System.out.println("rootScrollPane.ContentLayoutBounds = " + PopularDestinationsController.rootScrollPane.getContent().getLayoutBounds());
                     PopularDestinationsController.rootScrollPane.setVvalue(PopularDestinationsController.VPosScroll);
-                });
+                });*/
             }
         });
 
@@ -371,68 +375,54 @@ public class HotelWindow extends ScrollPane {
             }
         });
 
-        GridPane leftGP = new GridPane();
-        leftGP.setPadding(new Insets(10));
-        leftGP.setStyle("-fx-background-color: white; -fx-background-radius: 12 0 0 12;");
-        leftGP.getRowConstraints().addAll(
-                new RowConstraints(),
-                new RowConstraints()
-        );
+        VBox leftVB = new VBox(10);
+        leftVB.setPadding(new Insets(10));
+        leftVB.setStyle("-fx-background-color: white; -fx-background-radius: 12 0 0 12;");
+        leftVB.setPrefWidth(200);
 
-        leftGP.setPrefWidth(300);
-
-        GridPane ratGP = new GridPane();
-        ratGP.getRowConstraints().addAll(
-                new RowConstraints(),
-                new RowConstraints()
-        );
-        ratGP.getColumnConstraints().addAll(
-                new ColumnConstraints(),
-                new ColumnConstraints()
-        );
+        HBox ratHB = new HBox();
+        ratHB.setPrefWidth(180);
 
         ratLB = new Label("0.0");
-        GridPane.setRowSpan(ratLB, 2);
-        GridPane.setValignment(ratLB, VPos.TOP);
+
+        VBox countRewVB = new VBox();
 
         ratString = new Label("Неизвестно");
-        GridPane.setColumnIndex(ratString, 1);
-        GridPane.setValignment(ratString, VPos.BOTTOM);
         ratString.setPadding(new Insets(2, 5, 2, 5));
 
         countRev = new Label("Число оценок: ...");
-        GridPane.setValignment(countRev, VPos.TOP);
         countRev.getStyleClass().add("hotel-count-rating-label");
         countRev.setPadding(new Insets(2, 5, 2, 5));
-        GridPane.setColumnIndex(countRev, 1);
-        GridPane.setRowIndex(countRev, 1);
 
-        ratGP.getChildren().addAll(ratLB, ratString, countRev);
+        countRewVB.getChildren().addAll(ratString, countRev);
 
-        leftGP.getChildren().add(ratGP);
+        ratHB.getChildren().addAll(ratLB, countRewVB);
 
-        Button allReviewsBtn = new Button("Все отзывы");
-        GridPane.setRowIndex(allReviewsBtn, 1);
-        GridPane.setColumnSpan(allReviewsBtn, 2);
-        GridPane.setValignment(allReviewsBtn, VPos.BOTTOM);
+        leftVB.getChildren().add(ratHB);
+
+        Label allReviewsBtn = new Label("Все отзывы");
         allReviewsBtn.getStyleClass().add("select-button");
-        GridPane.setMargin(allReviewsBtn, new Insets(10, 0, 0, 10));
-        allReviewsBtn.setPrefWidth(280);
-        allReviewsBtn.setOnAction(e -> {
-            if (reviewListView == null)
-                createListComments();
+        allReviewsBtn.setPrefWidth(180);
+        allReviewsBtn.setAlignment(Pos.CENTER);
+        allReviewsBtn.setPadding(new Insets(7, 0, 7, 0));
+        allReviewsBtn.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if (reviewListView == null)
+                    createListComments();
 
-            showReviews();
+                showReviews();
+                e.consume();
+            }
         });
 
-        leftGP.getChildren().add(allReviewsBtn);
+        leftVB.getChildren().add(allReviewsBtn);
 
-        reviewsHB.getChildren().add(leftGP);
+        reviewsHB.getChildren().add(leftVB);
 
         VBox rightVB = new VBox();
         rightVB.setStyle("-fx-background-color: white; -fx-background-radius: 0 12 12 0;");
         rightVB.setPadding(new Insets(10));
-        rightVB.prefWidthProperty().bind(reviewsHB.widthProperty().subtract(200));
+        rightVB.prefWidthProperty().bind(reviewsHB.widthProperty().subtract(230));
 
         nameUser = new Label("Имя пользователя неизвестно");
         nameUser.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
@@ -483,6 +473,7 @@ public class HotelWindow extends ScrollPane {
         overSP.getChildren().add(closeCommentsBtn);
 
         contVB = new VBox(10);
+        contVB.setVisible(false);
         contVB.maxWidthProperty().bind(overSP.widthProperty().divide(1.3));
         contVB.maxHeightProperty().bind(overSP.heightProperty().subtract(60));
 
@@ -539,6 +530,25 @@ public class HotelWindow extends ScrollPane {
         contVB.getChildren().add(reviewListView);
 
         overSP.getChildren().add(contVB);
+
+        overSP.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if(!isVisible()) return;
+
+            Point2D pointInSortBtn= sortBtn.screenToLocal(event.getScreenX(), event.getScreenY());
+            Point2D pointInListView = reviewListView.screenToLocal(event.getScreenX(), event.getScreenY());
+
+            if ((pointInSortBtn != null && sortBtn.contains(pointInSortBtn))
+                    || (pointInListView != null && reviewListView.contains(pointInListView)))
+                return;
+            else
+                if(sorterWindow != null) {
+                    if (!sorterWindow.isVisible1())
+                        hideReviews();
+                    else
+                        sorterWindow.setVisible1(false);
+                } else
+                    hideReviews();
+        });
     }
 
     private void hideReviews() {
@@ -561,8 +571,8 @@ public class HotelWindow extends ScrollPane {
         VBox.setMargin(countRoom, new Insets(0, 15, 0, 17));
         rootVB.getChildren().add(countRoom);
 
-        roomsContainer = new VBox(10); // отступ между ячейками
-        roomsContainer.setPadding(new Insets(0, 15, 0, 15));
+        roomsContainer = new VBox(15); // отступ между ячейками
+        roomsContainer.setPadding(new Insets(0, 5, 0, 15));
         rootVB.getChildren().add(roomsContainer);
     }
 

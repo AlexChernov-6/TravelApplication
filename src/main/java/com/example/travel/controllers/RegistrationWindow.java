@@ -76,11 +76,11 @@ public class RegistrationWindow extends AnchorPane {
 
     private HBox firstAndSecondNameHB, birthdayHB;
 
-    public RegistrationWindow(StackPane overlaySP) {
-        this.overlaySP = overlaySP;
+    public RegistrationWindow() {
+        this.overlaySP = PopularDestinationsController.getOverlaySP();
 
         shadowPane = new Pane();
-        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
+        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
 
         overlaySP.getChildren().add(shadowPane);
 
@@ -88,7 +88,6 @@ public class RegistrationWindow extends AnchorPane {
         setMaxWidth(500);
         setOpacity(0.0);
 
-        setStyle("-fx-background-color: white;");
         getStyleClass().add("popup");
 
         createEnteredEmail();
@@ -98,8 +97,16 @@ public class RegistrationWindow extends AnchorPane {
         overlaySP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (!isVisible()) return;
 
+            Node target = event.getPickResult().getIntersectedNode();
+
+            if (target != null && target.getScene() != null &&
+                    target.getScene().getWindow() instanceof javafx.stage.PopupWindow) {
+                return;
+            }
+
             Point2D pointInWindow = screenToLocal(event.getScreenX(), event.getScreenY());
-            if (pointInWindow != null && contains(pointInWindow))
+            if (pointInWindow != null && (pointInWindow.getX() > 0 && pointInWindow.getY() > 0)
+                    && (pointInWindow.getX() < 500 && pointInWindow.getY() < 350))
                 return;
             else
                 hide();

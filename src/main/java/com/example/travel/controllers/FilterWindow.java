@@ -3,6 +3,7 @@ package com.example.travel.controllers;
 import com.example.travel.models.*;
 import com.example.travel.services.*;
 import com.example.travel.util.HelpFullClass;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -146,7 +147,10 @@ public class FilterWindow extends AnchorPane {
         bodySP.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         bodySP.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         bodySP.getStyleClass().add("scroll-pane");
-        new HelpFullClass().scrollPaneAnimation(bodySP);
+        Platform.runLater(() -> {
+            new HelpFullClass().scrollPaneAnimation(bodySP);
+        });
+
 
         bodyVB = new VBox();
         bodySP.setContent(bodyVB);

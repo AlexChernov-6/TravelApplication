@@ -481,7 +481,7 @@
 .scroll-pane {
     -fx-border-width: 0px;
     -fx-border-color: transparent;
-    -fx-background-color:transparent;
+    -fx-background-color: transparent;
 }
 
 .scroll-pane .scroll-bar:vertical .track {
@@ -525,6 +525,10 @@
     -fx-opacity: 0px;
     -fx-background-color: transparent;
     -fx-effect: none;
+}
+
+.scroll-pane-transparent .viewport {
+    -fx-background-color: transparent;
 }
 
 .text-field-email {
