@@ -8,8 +8,6 @@ import com.example.travel.services.HotelService;
 import com.example.travel.services.RoomService;
 import com.example.travel.util.ConfigManager;
 import com.example.travel.util.HelpFullClass;
-import javafx.animation.FadeTransition;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -18,21 +16,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
-import javafx.util.Duration;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -72,6 +65,7 @@ public class PopularDestinationsController {
     private static ConfigManager configManager = new ConfigManager();
 
     public static double VPosScroll = 0.0;
+    public static Map<Direction, Double> vPosScrollPaneWithHotelsLW = new HashMap<>();
 
     public enum SortedContext {
         BY_DEFAULT,
@@ -91,11 +85,6 @@ public class PopularDestinationsController {
         rootScrollPane.getStyleClass().add("scroll-pane");
         new HelpFullClass().scrollPaneAnimation(rootScrollPane);
 
-        rootScrollPane.vvalueProperty().addListener((ob, oldV, newV) -> {
-            if(popularDestinationsTP != null && popularDestinationsTP.isVisible())
-                VPosScroll = newV.doubleValue();
-        });
-
         overlaySP.getChildren().add(rootScrollPane);
 
         TextField searchTF = new TextField();
@@ -109,7 +98,7 @@ public class PopularDestinationsController {
         searchTF.textProperty().addListener((ob, oldV, newV) -> {
             String searchText = newV == null ? "" : newV.trim();
             nameHotel.bind(Bindings.createObjectBinding(() -> hotel -> {
-                if(hotelsLV.isVisible()) {
+                if (hotelsLV.isVisible()) {
                     if (newV == null || newV.isEmpty()) return true;
                     return hotel.getHotelName().toUpperCase().contains(newV.toUpperCase());
                 }
@@ -172,7 +161,7 @@ public class PopularDestinationsController {
         AnchorPane.setTopAnchor(profileBtn, 25.0);
         AnchorPane.setRightAnchor(profileBtn, 10.0);
         profileBtn.setOnAction(e -> {
-            if(registrationWindow == null)
+            if (registrationWindow == null)
                 registrationWindow = new RegistrationWindow();
             else
                 registrationWindow.show();
@@ -206,7 +195,7 @@ public class PopularDestinationsController {
         popularDestinationsTP.setPrefTileWidth(270);
         popularDestinationsTP.widthProperty().addListener((ob, oldV, newV) -> {
             int countChildInRow = Math.max((newV.intValue() + 30) / 300, 1);
-            if(countChildInRow != oldCountChildInRow) {
+            if (countChildInRow != oldCountChildInRow) {
                 oldCountChildInRow = countChildInRow;
                 int countRow = (countPopularDestinations % countChildInRow) == 0 ? countPopularDestinations / countChildInRow
                         : (countPopularDestinations / countChildInRow) + 1;
@@ -215,11 +204,11 @@ public class PopularDestinationsController {
         });
 
         List<Direction> directions = new DirectionService().getAllRow();
-        for(Direction direction : directions) {
+        for (Direction direction : directions) {
             CustomDirection direction1 = new CustomDirection(direction);
             direction1.setOnAction(e -> {
-                showHotelsList(direction);
                 oldPressedDirection = direction;
+                showHotelsList(direction);
             });
             popularDestinationsTP.getChildren().add(direction1);
         }
@@ -234,14 +223,22 @@ public class PopularDestinationsController {
                 updateStickyButton(rootScrollPane));
 
         overlaySP.widthProperty().addListener((ob, oldV, newV) -> {
-            if(filterWindow != null && filterWindow.isVisible()) {
+            if (filterWindow != null && filterWindow.isVisible()) {
                 filterWindow.setSizeWindow();
             }
         });
 
         overlaySP.heightProperty().addListener((ob, oldV, newV) -> {
-            if(filterWindow != null && filterWindow.isVisible()) {
+            if (filterWindow != null && filterWindow.isVisible()) {
                 filterWindow.setSizeWindow();
+            }
+        });
+
+        rootScrollPane.vvalueProperty().addListener((obs, old, newV) -> {
+            if (popularDestinationsTP != null && popularDestinationsTP.isVisible()) {
+                VPosScroll = newV.doubleValue();
+            } else if (hotelsLV != null && hotelsLV.isVisible() && oldPressedDirection != null) {
+                vPosScrollPaneWithHotelsLW.put(oldPressedDirection, newV.doubleValue());
             }
         });
 
@@ -249,6 +246,8 @@ public class PopularDestinationsController {
     }
 
     private static void showHotelsList(Direction direction) {
+        VPosScroll = rootScrollPane.getVvalue();
+
         popularDestinationsTP.setVisible(false);
         popularDestinationsTP.setManaged(false);
         popularDestinationsLb.setVisible(false);
@@ -264,17 +263,15 @@ public class PopularDestinationsController {
             List<Hotel> hotels = hotelService.getAllHotelsByDirectionID(direction.getIdDirection());
 
             Platform.runLater(() -> {
-                if(hotelsLV == null)
+                if (hotelsLV == null)
                     createListView();
                 else {
                     hotelsLV.setVisible(true);
                     hotelsLV.setManaged(true);
-                    }
+                }
 
                 observableHotels = FXCollections.observableArrayList(hotels);
                 filteredHotels = new FilteredList<>(observableHotels, p -> true);
-
-                popularDestinationsLb.setOpacity(0.0);
 
                 updatePredicateFilteredHotels();
 
@@ -299,22 +296,29 @@ public class PopularDestinationsController {
                 popularDestinationsLb.setManaged(true);
                 popularDestinationsLb.setText(String.format("Найдено отелей: %d ", hotels.size()));
 
-                if(backBtn == null)
+                if (backBtn == null)
                     createBackBtn();
                 else {
                     backBtn.setVisible(true);
                     backBtn.setManaged(true);
                 }
 
-                if(buttonsBox == null)
+                if (buttonsBox == null)
                     createFilterAndSort();
                 else {
                     buttonsBox.setVisible(true);
                     buttonsBox.setManaged(true);
                 }
 
-                if(stickyBackBtn == null)
+                if (stickyBackBtn == null)
                     createStickyBackBtn();
+
+                Platform.runLater(() -> {
+                    Double savedPos = vPosScrollPaneWithHotelsLW.get(oldPressedDirection);
+                    if (savedPos != null) {
+                        restoreScrollPosition(savedPos);
+                    }
+                });
             });
         }).start();
     }
@@ -462,6 +466,10 @@ public class PopularDestinationsController {
     }
 
     private static void handleBackAction() {
+        if (hotelsLV != null && hotelsLV.isVisible() && oldPressedDirection != null) {
+            vPosScrollPaneWithHotelsLW.put(oldPressedDirection, rootScrollPane.getVvalue());
+        }
+
         hotelsLV.setVisible(false);
         hotelsLV.setManaged(false);
 
@@ -480,16 +488,7 @@ public class PopularDestinationsController {
         popularDestinationsTP.setVisible(true);
         popularDestinationsTP.setManaged(true);
 
-        rootScrollPane.applyCss();
-        rootScrollPane.layout();
-
-        Platform.runLater(() -> {
-            System.out.println("VPosScroll = " + VPosScroll);
-            System.out.println("rootScrollPane.Vmax = " + rootScrollPane.getVmax());
-            System.out.println("rootScrollPane.Height = " + rootScrollPane.getHeight());
-            System.out.println("rootScrollPane.ContentLayoutBounds = " + rootScrollPane.getContent().getLayoutBounds());
-            rootScrollPane.setVvalue(VPosScroll);
-        });
+        Platform.runLater(() -> restoreScrollPosition(VPosScroll));
     }
 
     private static void updateStickyButton(ScrollPane scrollPane) {
@@ -558,7 +557,7 @@ public class PopularDestinationsController {
     }
 
     public static void updatePredicateFilteredHotels() {
-        if(filteredHotels == null)
+        if (filteredHotels == null)
             return;
 
         Predicate<Hotel> combined = filteres.values().stream().reduce(Predicate::and).orElse(h -> true);
@@ -574,5 +573,20 @@ public class PopularDestinationsController {
 
     public static StackPane getOverlaySP() {
         return overlaySP;
+    }
+
+    static void restoreScrollPosition(double targetVvalue) {
+        final double[] lastHeight = {rootScrollPane.getContent().getBoundsInLocal().getHeight()};
+        final javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(50));
+        pause.setOnFinished(event -> {
+            double newHeight = rootScrollPane.getContent().getBoundsInLocal().getHeight();
+            if (Math.abs(newHeight - lastHeight[0]) < 1.0) {
+                rootScrollPane.setVvalue(targetVvalue);
+            } else {
+                lastHeight[0] = newHeight;
+                pause.playFromStart();
+            }
+        });
+        pause.play();
     }
 }

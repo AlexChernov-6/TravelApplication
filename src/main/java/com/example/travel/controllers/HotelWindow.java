@@ -33,6 +33,7 @@ import java.util.Objects;
 
 import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
+import static com.example.travel.controllers.PopularDestinationsController.*;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 
 public class HotelWindow extends ScrollPane {
@@ -138,7 +139,7 @@ public class HotelWindow extends ScrollPane {
                 .filter(room -> room.getRoomSleepingPlaces() >= NumberOfGuestsController.totalStatic
                         && (room.getRoomPrice() >= (FilterWindow.fromPrice != null ? FilterWindow.fromPrice : 0)
                         && room.getRoomPrice() <= (FilterWindow.beforePrice != null ? FilterWindow.beforePrice : Math.round(new DirectionService()
-                        .getMaxRoomPriceByDirectionId(PopularDestinationsController.oldPressedDirection.getIdDirection()))))
+                        .getMaxRoomPriceByDirectionId(oldPressedDirection.getIdDirection()))))
                         && checkPaymentMethod(room) && checkCancellation(room) /*&& checkRoomFeature(room)*/)
                 .sorted((r1, r2) -> r1.getRoomSleepingPlaces() - r2.getRoomSleepingPlaces())
                 .toList();
@@ -174,13 +175,12 @@ public class HotelWindow extends ScrollPane {
         buttonHB.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 setVisible(false);
-                /*Platform.runLater(() -> {
-                    System.out.println("VPosScroll = " + PopularDestinationsController.VPosScroll);
-                    System.out.println("rootScrollPane.Vmax = " + PopularDestinationsController.rootScrollPane.getVmax());
-                    System.out.println("rootScrollPane.Height = " + PopularDestinationsController.rootScrollPane.getHeight());
-                    System.out.println("rootScrollPane.ContentLayoutBounds = " + PopularDestinationsController.rootScrollPane.getContent().getLayoutBounds());
-                    PopularDestinationsController.rootScrollPane.setVvalue(PopularDestinationsController.VPosScroll);
-                });*/
+                Platform.runLater(() -> {
+                    Double vPos = vPosScrollPaneWithHotelsLW.get(oldPressedDirection);
+                    if (vPos != null) {
+                        restoreScrollPosition(vPos);
+                    }
+                });
             }
         });
 
@@ -422,7 +422,7 @@ public class HotelWindow extends ScrollPane {
         VBox rightVB = new VBox();
         rightVB.setStyle("-fx-background-color: white; -fx-background-radius: 0 12 12 0;");
         rightVB.setPadding(new Insets(10));
-        rightVB.prefWidthProperty().bind(reviewsHB.widthProperty().subtract(230));
+        rightVB.prefWidthProperty().bind(reviewsHB.widthProperty().subtract(200));
 
         nameUser = new Label("Имя пользователя неизвестно");
         nameUser.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
@@ -633,6 +633,16 @@ public class HotelWindow extends ScrollPane {
             webView.setPrefHeight(newVal);
             webView.setMaxHeight(newVal);
             webView.setMinHeight(newVal);
+        });
+
+        overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!webView.isVisible()) return;
+
+            Point2D pointInWindow = webView.screenToLocal(event.getScreenX(), event.getScreenY());
+            if (pointInWindow != null && webView.contains(pointInWindow))
+                return;
+            else
+                hideMap();
         });
 
         overSP.getChildren().add(webView);

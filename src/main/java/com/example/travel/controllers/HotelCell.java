@@ -26,6 +26,8 @@ import javafx.util.Duration;
 import java.util.List;
 import java.util.Objects;
 
+import static com.example.travel.controllers.PopularDestinationsController.*;
+
 public class HotelCell extends ListCell<Hotel> {
     private static final double COLUMN_IMAGE_WIDTH = 200;
     private static final double COLUMN_PRICE_WIDTH = 300;
@@ -384,6 +386,8 @@ public class HotelCell extends ListCell<Hotel> {
 
         rootGridPane.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
+                vPosScrollPaneWithHotelsLW.put(oldPressedDirection, rootScrollPane.getVvalue());
+
                 if(PopularDestinationsController.getOverlaySP().getChildren().stream().filter(
                         node -> node.getUserData() != null && node.getUserData().equals("hotelWindow")).toList().isEmpty())
                     createHotelWindow();

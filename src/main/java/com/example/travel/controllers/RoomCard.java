@@ -1,6 +1,10 @@
 package com.example.travel.controllers;
 
+import com.example.travel.models.HotelFeature;
 import com.example.travel.models.Room;
+import com.example.travel.models.RoomFeature;
+import com.example.travel.services.RoomFeatureRelationService;
+import com.example.travel.services.RoomFeatureService;
 import com.example.travel.util.HelpFullClass;
 import com.example.travel.util.ImageUtils;
 import javafx.application.Platform;
@@ -18,9 +22,12 @@ import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
+import java.util.List;
 import java.util.Objects;
 
+import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
+import static com.example.travel.util.ImageUtils.round;
 
 public class RoomCard extends VBox {
     private GridPane rootGP;
@@ -74,7 +81,7 @@ public class RoomCard extends VBox {
         imageView = new ImageView();
         imageView.setFitWidth(200);
         imageView.setFitHeight(200);
-        ImageUtils.round(imageView, 30, 30, 30, 30);
+        round(imageView, 30, 30, 30, 30);
         imageView.setOnMouseClicked(e -> {
             if(e.getButton() == MouseButton.PRIMARY) {
                 if(infoRoomScrollPane == null)
@@ -331,6 +338,9 @@ public class RoomCard extends VBox {
         Button selectBtn = new Button("К оформлению");
         selectBtn.getStyleClass().add("select-button");
         selectBtn.setPrefWidth(Double.MAX_VALUE);
+        selectBtn.setOnAction(e -> {
+            new CheckoutWindow();
+        });
 
         selectVB.getChildren().add(selectBtn);
 
@@ -428,7 +438,8 @@ public class RoomCard extends VBox {
         overSP.getChildren().add(infoRoomScrollPane);
 
         VBox infoRoomVB = new VBox(5);
-        infoRoomVB.setStyle("-fx-background-color: white; -fx-background-radius: 15 15 0 0;");
+        infoRoomVB.setPadding(new Insets(0, 0, 5, 0));
+        infoRoomVB.setStyle("-fx-background-color: rgba(230, 230, 230); -fx-background-radius: 15 15 0 0;");
         infoRoomVB.setMaxWidth(widthWin);
         infoRoomVB.prefHeightProperty().bind(infoRoomScrollPane.heightProperty());
 
@@ -441,7 +452,7 @@ public class RoomCard extends VBox {
         imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
         imageViewRoom.setFitWidth(widthWin - 1.6);
         imageViewRoom.setPreserveRatio(true);
-        ImageUtils.round(imageViewRoom, 30, 30, 30, 30);
+        round(imageViewRoom, 30, 30, 30, 30);
 
         Platform.runLater(() -> {
             photoSP.setMaxHeight(imageViewRoom.getLayoutBounds().getHeight());
@@ -531,6 +542,216 @@ public class RoomCard extends VBox {
 
         infoRoomVB.getChildren().add(photoSP);
 
+        VBox descriptionVB = new VBox(10);
+        descriptionVB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+
+        Label nameRoom = new Label(room.getRoomName());
+        nameRoom.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        descriptionVB.getChildren().add(nameRoom);
+
+        Label descriptionRoom = new Label(room.getRoomDescription());
+        descriptionRoom.setWrapText(true);
+        descriptionRoom.setStyle("-fx-font-size: 18px;");
+        descriptionVB.getChildren().add(descriptionRoom);
+
+        Label squareRoom = new Label(String.format("Площадь: %d м²", Math.round(room.getRoomSquare())));
+        squareRoom.setStyle("-fx-font-size: 19px;");
+        descriptionVB.getChildren().add(squareRoom);
+
+        infoRoomVB.getChildren().add(descriptionVB);
+
+        FlowPane roomFeaturesContainer = new FlowPane();
+        roomFeaturesContainer.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        roomFeaturesContainer.setHgap(3);
+        roomFeaturesContainer.setVgap(4);
+        roomFeaturesContainer.setAlignment(Pos.BOTTOM_LEFT);
+        roomFeaturesContainer.setPadding(new Insets(0, 0, 10, 10));
+
+        List<RoomFeature> features = new RoomFeatureRelationService().getAllRoomFeatureByRoomId(room.getIdRooms());
+
+        for (RoomFeature feature : features) {
+            Label label = new Label(feature.getFeatureName());
+            label.getStyleClass().add("feature-label-big");
+            roomFeaturesContainer.getChildren().add(label);
+        }
+
+        infoRoomVB.getChildren().add(roomFeaturesContainer);
+
+        VBox numberSettingsVB = new VBox(10);
+        numberSettingsVB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        infoRoomVB.getChildren().add(numberSettingsVB);
+
+        Label numberSettingsLB = new Label("Настройки номера");
+        numberSettingsLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        numberSettingsVB.getChildren().add(numberSettingsLB);
+
+        VBox coundSleepingPlacesVB = new VBox(7);
+        numberSettingsVB.getChildren().add(coundSleepingPlacesVB);
+
+        Label roomSleepingPlaces = new Label("Число доступных мест: ");
+        roomSleepingPlaces.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        coundSleepingPlacesVB.getChildren().add(roomSleepingPlaces);
+
+        HBox countRoomSleepingPlacesHB = new HBox(8);
+        countRoomSleepingPlacesHB.setAlignment(Pos.CENTER_LEFT);
+
+        ImageView bedIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/bed.png"))));
+        bedIV.setFitHeight(20);
+        bedIV.setFitWidth(20);
+        bedIV.setPreserveRatio(true);
+
+        Label countRoomSleepingPlacesLB = new Label();
+        countRoomSleepingPlacesLB.setStyle("-fx-font-size: 16px;");
+
+        countRoomSleepingPlacesHB.getChildren().addAll(bedIV, countRoomSleepingPlacesLB);
+
+        coundSleepingPlacesVB.getChildren().add(countRoomSleepingPlacesHB);
+
+        short roomCountRoomSleepingPlaces = room.getRoomSleepingPlaces();
+        if (roomCountRoomSleepingPlaces == 1)
+            countRoomSleepingPlacesLB.setText("1 место");
+        else if (roomCountRoomSleepingPlaces > 1 && roomCountRoomSleepingPlaces <= 4)
+            countRoomSleepingPlacesLB.setText(String.format("%d места", roomCountRoomSleepingPlaces));
+        else
+            countRoomSleepingPlacesLB.setText(String.format("%d мест", roomCountRoomSleepingPlaces));
+
+        VBox foodVB = new VBox(7);
+        numberSettingsVB.getChildren().add(foodVB);
+
+        Label mealPlanLB = new Label("Питание");
+        mealPlanLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        foodVB.getChildren().add(mealPlanLB);
+
+        HBox foodHB = new HBox(5);
+        foodVB.getChildren().add(foodHB);
+
+        ImageView mealPlanIV = new ImageView();
+        mealPlanIV.setFitHeight(22);
+        mealPlanIV.setFitWidth(22);
+
+        Label mealPlanLB2 = new Label("Питание");
+        mealPlanLB2.setStyle("-fx-font-size: 16px;");
+
+        foodHB.getChildren().addAll(mealPlanIV, mealPlanLB2);
+
+        mealPlanLB2.setText(room.getMealPlan().toString());
+
+        if (mealPlanLB2.getText().equals("Без питания"))
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/no-food.png"))));
+        else
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/food.png"))));
+
+        VBox refundVB = new VBox(7);
+        numberSettingsVB.getChildren().add(refundVB);
+
+        Label refundLB = new Label("Возврат");
+        refundLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        refundVB.getChildren().add(refundLB);
+
+        HBox refundHB = new HBox(5);
+        refundVB.getChildren().add(refundHB);
+
+        ImageView refundIV = new ImageView();
+        refundIV.setFitHeight(22);
+        refundIV.setFitWidth(22);
+
+        Label refundLB2 = new Label(room.getRefundPolicy().toString());
+        refundLB2.setStyle("-fx-font-size: 16px;");
+
+        refundHB.getChildren().addAll(refundIV, refundLB2);
+
+        if (refundLB2.getText().equals("Платная отмена"))
+            refundIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/paid-cancellation.png"))));
+        else
+            refundIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/free-cancellation.png"))));
+
+        VBox paymentVB = new VBox(7);
+        numberSettingsVB.getChildren().add(paymentVB);
+
+        Label paymentLB = new Label("Оплата");
+        paymentLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        paymentVB.getChildren().add(paymentLB);
+
+        HBox paymentHB = new HBox(5);
+        paymentVB.getChildren().add(paymentHB);
+
+        ImageView paymentMethodIV = new ImageView();
+        paymentMethodIV.setFitHeight(22);
+        paymentMethodIV.setFitWidth(22);
+
+        Label paymentLB2 = new Label(room.getPaymentMethod().toString());
+        paymentLB2.setStyle("-fx-font-size: 16px;");
+
+        paymentHB.getChildren().addAll(paymentMethodIV, paymentLB2);
+
+        paymentMethodIV.setImage(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/payment.png"))));
+
+        HBox bottomHB = new HBox();
+        bottomHB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        infoRoomVB.getChildren().add(bottomHB);
+        bottomHB.setAlignment(Pos.CENTER_LEFT);
+
+        VBox minPriceRoomVB = new VBox(5);
+        minPriceRoomVB.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(minPriceRoomVB, Priority.ALWAYS);
+
+        HBox discountPriceHB = new HBox(3);
+        discountPriceHB.setAlignment(Pos.CENTER_LEFT);
+
+        ImageView imageDiscount = new ImageView(DISCOUND_IMAGE);
+        imageDiscount.setFitWidth(30);
+        imageDiscount.setFitHeight(30);
+        imageDiscount.setPreserveRatio(true);
+
+        Label actualMinPriceLB = new Label(String.format("%.2f", room.getRoomPrice()));
+        actualMinPriceLB.getStyleClass().add("room-small-price");
+
+        ImageView imageRuble = new ImageView(RUBLE_IMAGE);
+        imageRuble.setFitWidth(25);
+        imageRuble.setFitHeight(25);
+        imageRuble.setPreserveRatio(true);
+
+        discountPriceHB.getChildren().addAll(imageDiscount, actualMinPriceLB, imageRuble);
+
+        minPriceRoomVB.getChildren().add(discountPriceHB);
+
+        HBox actualPriceHB = new HBox();
+        actualPriceHB.setAlignment(Pos.CENTER_LEFT);
+
+        Text actualPriceLB = new Text(String.format("%.2f", room.getRoomPrice() + room.getRoomPrice() * 0.05));
+        actualPriceLB.getStyleClass().add("room-actual-price");
+
+        ImageView imageSmallRuble = new ImageView(RUBLE_SMALL_IMAGE);
+        imageSmallRuble.setFitWidth(20);
+        imageSmallRuble.setFitHeight(20);
+        imageSmallRuble.setPreserveRatio(true);
+
+        actualPriceHB.getChildren().addAll(actualPriceLB, imageSmallRuble);
+
+        minPriceRoomVB.getChildren().add(actualPriceHB);
+
+        bottomHB.getChildren().add(minPriceRoomVB);
+
+        Button toBook = new Button("Забронировать");
+        toBook.setPrefWidth(250);
+        toBook.getStyleClass().add("show-result-button");
+        toBook.prefHeightProperty().bind(bottomHB.heightProperty().subtract(40));
+        toBook.setOnAction(e -> {
+            new CheckoutWindow();
+        });
+
+        bottomHB.getChildren().add(toBook);
+
         overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (!infoRoomScrollPane.isVisible()) return;
 
@@ -550,6 +771,8 @@ public class RoomCard extends VBox {
         nextImageBtn.setVisible(index < max);
 
         imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
+
+        imageViewRoom.requestFocus();
     }
 
     private void hide() {

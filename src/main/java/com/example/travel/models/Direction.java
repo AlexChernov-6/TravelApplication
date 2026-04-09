@@ -4,6 +4,8 @@ import com.example.travel.util.ImageConverter;
 import jakarta.persistence.*;
 import javafx.scene.image.Image;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "directions", schema = "public")
 public class Direction {
@@ -61,5 +63,17 @@ public class Direction {
 
     public void setPhotoCity(byte[] photoCity) {
         this.photoCity = photoCity;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        Direction direction = (Direction) object;
+        return idDirection == direction.idDirection;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(idDirection);
     }
 }
