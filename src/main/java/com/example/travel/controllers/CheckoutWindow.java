@@ -1,36 +1,79 @@
 package com.example.travel.controllers;
 
 
+import com.example.travel.models.Room;
+import com.example.travel.models.RoomFeature;
+import com.example.travel.services.RoomFeatureRelationService;
+import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.concurrent.Worker;
+import javafx.geometry.*;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.*;
+import javafx.scene.text.Text;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
 
-import static com.example.travel.controllers.PopularDestinationsController.*;
+import static com.example.travel.controllers.HotelCell.*;
+import static com.example.travel.controllers.HotelCell.RUBLE_SMALL_IMAGE;
+import static com.example.travel.util.HelpFullClass.getRussianMonthName;
+import static com.example.travel.util.ImageUtils.round;
 
-public class CheckoutWindow extends VBox {
-    public CheckoutWindow() {
+public class CheckoutWindow extends ScrollPane {
+    private Label infoLB, hotelNameLB, hotelCountStar, ratingLB, addressLabel;
+
+    private double widthWin = 600.0;
+
+    private Room room;
+
+    private Pane shadowPane;
+    private Button closeBtn;
+    private WebView webView;
+
+    private ScrollPane infoRoomScrollPane;
+
+    private ImageView imageViewRoom;
+
+    private Button prevImageBtn, nextImageBtn;
+
+    private GridPane gridPane;
+
+    public CheckoutWindow(Room room) {
+        this.room = room;
         StackPane overSP = PopularDestinationsController.getOverlaySP();
 
-        setStyle("-fx-background-color: rgba(230, 230, 230);");
-        setPadding(new Insets(15, 20, 15, 20));
-        setSpacing(15);
+        VBox parentVB = new VBox();
+        parentVB.setStyle("-fx-background-color: rgba(230, 230, 230);");
+        parentVB.setPadding(new Insets(15, 20, 15, 20));
+        parentVB.setSpacing(10);
+        parentVB.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty().subtract(10));
+        parentVB.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty().subtract(10));
+
+        setContent(parentVB);
+        setFitToWidth(true);
+        setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        getStyleClass().add("scroll-pane");
+        Platform.runLater(() -> {
+            new HelpFullClass().scrollPaneAnimation(this);
+        });
+        prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
+        prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
 
         overSP.getChildren().add(this);
 
         HBox buttonHB = new HBox(10);
-        VBox.setMargin(buttonHB, new Insets(10, 0, 0, 10));
-        buttonHB.setPadding(new Insets(5, 10, 5, 10));
         buttonHB.setAlignment(Pos.CENTER_LEFT);
         buttonHB.getStyleClass().add("set-hand-cursor");
         buttonHB.setMaxWidth(USE_PREF_SIZE);
@@ -47,13 +90,842 @@ public class CheckoutWindow extends VBox {
         buttonHB.getChildren().addAll(btnIV, btnText);
 
         buttonHB.setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
+            if (e.getButton() == MouseButton.PRIMARY) {
                 overSP.getChildren().remove(this);
             }
         });
 
-        getChildren().add(buttonHB);
+        parentVB.getChildren().add(buttonHB);
+
+        VBox paymentVB = new VBox();
+        parentVB.getChildren().add(paymentVB);
+
+        Label paymentLB = new Label("Оплата");
+        paymentLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        infoLB = new Label();
+        infoLB.setStyle("-fx-font-size: 16px; -fx-text-fill: rgba(180, 180, 180);");
+        LocalDate startDate;
+        LocalDate endDate;
+        if (CustomCalendar.getStartSelectedBtn() != null && CustomCalendar.getEndSelectedBtn() != null) {
+            startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            endDate = (LocalDate) CustomCalendar.getEndSelectedBtn().getUserData();
+        } else if (CustomCalendar.getStartSelectedBtn() != null) {
+            startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
+            endDate = startDate.plusDays(1);
+        } else {
+            startDate = LocalDate.now().plusDays(room.getHotel().getDaysFromApplicationToCheckIn());
+            endDate = startDate.plusDays(1);
+        }
+
+        String countGustsStr;
+        int total = NumberOfGuestsController.totalStatic;
+        if (total == 1)
+            countGustsStr = "1 гость";
+        else if (total >= 2 && total <= 4)
+            countGustsStr = total + " гостя";
+        else
+            countGustsStr = total + " гостей";
+        infoLB.setText(getTextByUserData(startDate) + " - " + getTextByUserData(endDate) + " · "
+                + countNight(startDate, endDate) + " · " + countGustsStr);
+
+        paymentVB.getChildren().addAll(paymentLB, infoLB);
+
+        VBox hotelInfoHeader = new VBox();
+        hotelInfoHeader.setPadding(new Insets(15, 20, 15, 20));
+        hotelInfoHeader.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
+        parentVB.getChildren().add(hotelInfoHeader);
+
+        HBox hotelNameHB = new HBox();
+
+        hotelNameLB = new Label(room.getHotel().getHotelName());
+        hotelNameLB.getStyleClass().add("hotel-name-label");
+
+        hotelCountStar = new Label(" " + room.getHotel().getCountStars());
+        hotelCountStar.getStyleClass().add("hotel-name-label");
+
+        ImageView starImageView = new ImageView(STAR_IMAGE);
+        starImageView.setFitHeight(15);
+        starImageView.setFitWidth(15);
+        starImageView.setPreserveRatio(true);
+
+        hotelNameHB.getChildren().addAll(hotelNameLB, hotelCountStar, starImageView);
+
+        hotelInfoHeader.getChildren().add(hotelNameHB);
+
+        HBox ratingAndAddressHotel = new HBox(10);
+        ratingAndAddressHotel.setAlignment(Pos.TOP_LEFT);
+
+        ratingLB = new Label(String.format("%.1f", room.getHotel().getHotelRating()));
+        ratingLB.getStyleClass().add("hotel-rating-label");
+        ratingLB.setAlignment(Pos.CENTER);
+        ratingLB.setPadding(new Insets(2, 10, 2, 10));
+
+        double newValue = Double.parseDouble(ratingLB.getText().replace(",", "."));
+
+        if (newValue >= 4)
+            ratingLB.setStyle("-fx-background-color: #0bb527;");
+        else if (newValue < 4 && newValue >= 3)
+            ratingLB.setStyle("-fx-background-color: #7fb50b;");
+        else if (newValue < 3 && newValue >= 2)
+            ratingLB.setStyle("-fx-background-color: #cbdb16;");
+        else
+            ratingLB.setStyle("-fx-background-color: #b00000;");
+
+        HBox addressHB = new HBox(3);
+        addressHB.setAlignment(Pos.CENTER_LEFT);
+        addressHB.getStyleClass().add("set-hand-cursor");
+
+        ImageView mapIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/map.png"))));
+        mapIV.setFitWidth(11);
+        mapIV.setFitHeight(11);
+        mapIV.setPreserveRatio(true);
+
+        addressLabel = new Label(room.getHotel().getHotelAddress());
+        addressLabel.setStyle("-fx-text-fill: #b40acf");
+
+        addressHB.getChildren().addAll(mapIV, addressLabel);
+
+        addressHB.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (room.getHotel().getLongitude() != null && room.getHotel().getLatitude() != null) {
+                    if (overSP.getChildren().stream().filter(node ->
+                            node.getUserData() != null && node.getUserData().equals("mapWebView")).toList().isEmpty())
+                        createMap();
+                    showMap();
+                } else System.out.println("Координаты пусты");
+            }
+        });
+
+        ratingAndAddressHotel.getChildren().addAll(ratingLB, addressHB);
+
+        hotelInfoHeader.getChildren().add(ratingAndAddressHotel);
+
+        HBox roomHB = new HBox(10);
+        roomHB.setStyle("-fx-background-color: white; -fx-background-radius: 15px;");
+        parentVB.getChildren().add(roomHB);
+
+        StackPane photosStackPane = new StackPane();
+        photosStackPane.setPrefWidth(200);
+        photosStackPane.setMaxWidth(200);
+        photosStackPane.setMaxHeight(200);
+        photosStackPane.setPrefHeight(200);
+
+        ImageView imageView = new ImageView();
+        imageView.setFitWidth(200);
+        imageView.setFitHeight(200);
+        imageView.setImage(room.getImageByNumber(0));
+        round(imageView, 30, 30, 30, 30);
+        imageView.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (infoRoomScrollPane == null)
+                    createWinAboutTheRoom();
+                show();
+            }
+        });
+
+        photosStackPane.getChildren().add(imageView);
+
+        HBox countPhotoHB = new HBox(3);
+        countPhotoHB.setPadding(new Insets(2, 3, 2, 3));
+        StackPane.setAlignment(countPhotoHB, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(countPhotoHB, new Insets(0, 10, 10, 0));
+        countPhotoHB.setStyle("-fx-background-color: rgba(255, 255, 255, 0.7); -fx-background-radius: 12px;");
+        countPhotoHB.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
+        ImageView emptyImage = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/empty-image.png"))));
+        emptyImage.setFitHeight(15);
+        emptyImage.setFitHeight(15);
+        emptyImage.setPreserveRatio(true);
+
+        countPhotoHB.getChildren().add(emptyImage);
+
+        Label countImageLB = new Label(String.format("%d фото", room.getRoomPhotos().length));
+        countImageLB.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;");
+
+        countPhotoHB.getChildren().add(countImageLB);
+
+        photosStackPane.getChildren().add(countPhotoHB);
+
+        roomHB.getChildren().add(photosStackPane);
+
+        VBox roomVB = new VBox(10);
+        roomHB.getChildren().add(roomVB);
+        roomVB.setPadding(new Insets(10));
+        HBox.setHgrow(roomVB, Priority.ALWAYS);
+
+        Label roomNameLB = new Label(room.getRoomName());
+        roomNameLB.setStyle("-fx-font-weight: bold; -fx-font-size: 20px;");
+        roomVB.getChildren().add(roomNameLB);
+
+        HBox checkInAndCheckOutHB = new HBox(5);
+        roomVB.getChildren().add(checkInAndCheckOutHB);
+
+        checkInAndCheckOutHB.getChildren().addAll(createShapeCheckInDates("Заселение", startDate, room.getCheckInTime())
+                , createShapeCheckInDates("Выезд", endDate, room.getCheckOutTime()));
+
+        VBox bottomVB = new VBox();
+        bottomVB.setAlignment(Pos.BOTTOM_LEFT);
+        VBox.setVgrow(bottomVB, Priority.ALWAYS);
+        roomVB.getChildren().add(bottomVB);
+
+        HBox aboutTheRoomHB = new HBox(3);
+        aboutTheRoomHB.setStyle("-fx-background-color: rgba(255,230,255, 0.8); -fx-background-radius: 12px; -fx-cursor: hand;");
+        aboutTheRoomHB.setPadding(new Insets(3, 10, 3, 10));
+        aboutTheRoomHB.setAlignment(Pos.CENTER_LEFT);
+        aboutTheRoomHB.setPrefHeight(30);
+        aboutTheRoomHB.setMaxWidth(USE_PREF_SIZE);
+        aboutTheRoomHB.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if(infoRoomScrollPane == null)
+                    createWinAboutTheRoom();
+                show();
+            }
+        });
+
+        Label aboutTheRoomLB = new Label("O номере");
+        aboutTheRoomLB.setStyle("-fx-text-fill: rgba(176, 60, 176);");
+
+        ImageView arrowRightIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/right-arrow-violet.png"))));
+        arrowRightIV.setFitWidth(8);
+        arrowRightIV.setFitHeight(8);
+        arrowRightIV.setPreserveRatio(true);
+
+        aboutTheRoomHB.getChildren().addAll(aboutTheRoomLB, arrowRightIV);
+
+        bottomVB.getChildren().add(aboutTheRoomHB);
+
+        int i = 1;
+        for(; i <= NumberOfGuestsController.adultsCountStatic; i ++)
+            parentVB.getChildren().add(createGuestProfile(i, "Взрослый"));
+
+        for(; i <= NumberOfGuestsController.totalStatic; i++)
+            parentVB.getChildren().add(createGuestProfile(i, "Ребёнок"));
+    }
+
+    private void createMap() {
+        StackPane overSP = PopularDestinationsController.getOverlaySP();
+
+        if (shadowPane == null) {
+            shadowPane = new Pane();
+            shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
+            shadowPane.setVisible(false);
+            overSP.getChildren().add(shadowPane);
+        }
+
+        closeBtn = new Button();
+        closeBtn.setVisible(false);
+        closeBtn.setPrefHeight(30);
+        closeBtn.setPrefWidth(30);
+        StackPane.setAlignment(closeBtn, Pos.TOP_RIGHT);
+        StackPane.setMargin(closeBtn, new Insets(20, 20, 0, 0));
+        closeBtn.getStyleClass().add("close-button");
+        closeBtn.setOnAction(event -> {
+            hideMap();
+        });
+
+        ImageView closeImg = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/close.png"))));
+        closeImg.setFitHeight(15);
+        closeImg.setFitWidth(15);
+        closeImg.setPreserveRatio(true);
+
+        closeBtn.setGraphic(closeImg);
+
+        overSP.getChildren().add(closeBtn);
+
+        webView = new WebView();
+        webView.setVisible(false);
+        webView.setUserData("mapWebView");
+
+        double startWidthWebView = overSP.getWidth() * 0.7;
+        double startHeightWebView = overSP.getHeight() * 0.8;
+
+        webView.setPrefWidth(startWidthWebView);
+        webView.setMaxWidth(startWidthWebView);
+        webView.setMinWidth(startWidthWebView);
+        webView.setPrefHeight(startHeightWebView);
+        webView.setMaxHeight(startHeightWebView);
+        webView.setMinHeight(startHeightWebView);
+
+        // Привязка размеров (как у вас)
+        overSP.widthProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue() * 0.7;
+            webView.setPrefWidth(newVal);
+            webView.setMaxWidth(newVal);
+            webView.setMinWidth(newVal);
+        });
+        overSP.heightProperty().addListener((ob, oldV, newV) -> {
+            double newVal = newV.doubleValue() * 0.8;
+            webView.setPrefHeight(newVal);
+            webView.setMaxHeight(newVal);
+            webView.setMinHeight(newVal);
+        });
+
+        overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!webView.isVisible()) return;
+
+            Point2D pointInWindow = webView.screenToLocal(event.getScreenX(), event.getScreenY());
+            if (pointInWindow != null && webView.contains(pointInWindow))
+                return;
+            else
+                hideMap();
+        });
+
+        overSP.getChildren().add(webView);
+    }
+
+    private void showMap() {
+        shadowPane.setVisible(true);
+        closeBtn.setVisible(true);
+        webView.setVisible(true);
+
+        WebEngine webEngine = webView.getEngine();
+
+        webEngine.load("http://localhost:8080/map.html");
+
+        // После успешной загрузки вызываем initMap
+        webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.SUCCEEDED) {
+                String cords = String.format("%.6f", room.getHotel().getLatitude()).replace(",", ".")
+                        + "," + String.format("%.6f", room.getHotel().getLongitude()).replace(",", ".");
+                webEngine.executeScript("initMap('" + cords + "', '" + room.getHotel().getHotelName()
+                        + "', '" + room.getHotel().getHotelAddress() + "');");
+            }
+        });
+    }
+
+    private void hideMap() {
+        shadowPane.setVisible(false);
+        closeBtn.setVisible(false);
+        webView.setVisible(false);
+    }
+
+    private void createWinAboutTheRoom() {
+        StackPane overSP = PopularDestinationsController.getOverlaySP();
+        shadowPane = new Pane();
+        shadowPane.setVisible(false);
+        shadowPane.setStyle("-fx-background-color: rgba(0,0,0,0.7);");
+
+        overSP.getChildren().add(shadowPane);
+
+        closeBtn = new Button();
+        closeBtn.setPrefHeight(30);
+        closeBtn.setPrefWidth(30);
+        StackPane.setAlignment(closeBtn, Pos.TOP_RIGHT);
+        StackPane.setMargin(closeBtn, new Insets(15, 15, 0, 0));
+        closeBtn.getStyleClass().add("close-button");
+        closeBtn.setOnAction(event -> {
+            hide();
+        });
+
+        ImageView closeImg = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/close.png"))));
+        closeImg.setFitHeight(15);
+        closeImg.setFitWidth(15);
+        closeImg.setPreserveRatio(true);
+
+        closeBtn.setGraphic(closeImg);
+
+        overSP.getChildren().add(closeBtn);
+
+        infoRoomScrollPane = new ScrollPane();
+        infoRoomScrollPane.setVisible(false);
+        infoRoomScrollPane.setMaxWidth(widthWin + 10);
+        infoRoomScrollPane.maxHeightProperty().bind(overSP.heightProperty().subtract(70));
+        StackPane.setAlignment(infoRoomScrollPane, Pos.BOTTOM_CENTER);
+        infoRoomScrollPane.setFitToWidth(true);
+        infoRoomScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        infoRoomScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        infoRoomScrollPane.getStyleClass().addAll("scroll-pane", "scroll-pane-transparent");
+        Platform.runLater(() -> {
+            new HelpFullClass().scrollPaneAnimation(infoRoomScrollPane);
+        });
+
+        overSP.getChildren().add(infoRoomScrollPane);
+
+        VBox infoRoomVB = new VBox(5);
+        infoRoomVB.setPadding(new Insets(0, 0, 5, 0));
+        infoRoomVB.setStyle("-fx-background-color: rgba(230, 230, 230); -fx-background-radius: 15 15 0 0;");
+        infoRoomVB.setMaxWidth(widthWin);
+        infoRoomVB.prefHeightProperty().bind(infoRoomScrollPane.heightProperty());
+
+        infoRoomScrollPane.setContent(infoRoomVB);
+
+        StackPane photoSP = new StackPane();
+        photoSP.setStyle("-fx-background-radius: 15px;");
+
+        imageViewRoom = new ImageView();
+        imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
+        imageViewRoom.setFitWidth(widthWin - 1.6);
+        imageViewRoom.setPreserveRatio(true);
+        round(imageViewRoom, 30, 30, 30, 30);
+
+        Platform.runLater(() -> {
+            photoSP.setMaxHeight(imageViewRoom.getLayoutBounds().getHeight());
+            photoSP.setMaxWidth(infoRoomVB.getWidth());
+        });
+
+        prevImageBtn = new Button();
+        prevImageBtn.getStyleClass().add("scroll-button");
+        prevImageBtn.setPrefHeight(20);
+        prevImageBtn.setPrefWidth(20);
+        StackPane.setMargin(prevImageBtn, new Insets(0, 0, 0, 10));
+        StackPane.setAlignment(prevImageBtn, Pos.CENTER_LEFT);
+        prevImageBtn.setVisible(false);
+        prevImageBtn.setOnAction(e -> {
+            if (room != null) {
+                int newIndex = room.getCurrentImageIndex() - 1;
+                room.setCurrentImageIndex(newIndex);
+                updateVisibleButton();
+            }
+        });
+
+        prevImageBtn.setOnMouseEntered(event -> {
+            prevImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.7);");
+            prevImageBtn.setPrefHeight(27);
+            prevImageBtn.setPrefWidth(27);
+        });
+
+        prevImageBtn.setOnMouseExited(event -> {
+            prevImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.5);");
+            prevImageBtn.setPrefHeight(20);
+            prevImageBtn.setPrefWidth(20);
+        });
+
+        ImageView prevImageIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/left-arrow.png"))));
+        prevImageIV.setFitHeight(10);
+        prevImageIV.setFitWidth(10);
+        prevImageIV.setPreserveRatio(true);
+
+        prevImageBtn.setGraphic(prevImageIV);
+
+        nextImageBtn = new Button();
+        nextImageBtn.getStyleClass().add("scroll-button");
+        nextImageBtn.setPrefHeight(20);
+        nextImageBtn.setPrefWidth(20);
+        StackPane.setMargin(nextImageBtn, new Insets(0, 10, 0, 0));
+        StackPane.setAlignment(nextImageBtn, Pos.CENTER_RIGHT);
+        nextImageBtn.setVisible(false);
+        nextImageBtn.setOnAction(e -> {
+            if (room != null) {
+                int newIndex = room.getCurrentImageIndex() + 1;
+                room.setCurrentImageIndex(newIndex);
+                updateVisibleButton();
+            }
+        });
+
+        nextImageBtn.setOnMouseEntered(event -> {
+            nextImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.7);");
+            nextImageBtn.setPrefHeight(27);
+            nextImageBtn.setPrefWidth(27);
+        });
+
+        nextImageBtn.setOnMouseExited(event -> {
+            nextImageBtn.setStyle("-fx-background-color: rgba(255,255,255,0.5);");
+            nextImageBtn.setPrefHeight(20);
+            nextImageBtn.setPrefWidth(20);
+        });
+
+        ImageView nextImageIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/right-arrow.png"))));
+        nextImageIV.setFitHeight(10);
+        nextImageIV.setFitWidth(10);
+        nextImageIV.setPreserveRatio(true);
+
+        nextImageBtn.setGraphic(nextImageIV);
+
+        photoSP.setOnMouseEntered(e -> {
+            updateVisibleButton();
+        });
+
+        photoSP.setOnMouseExited(e -> {
+            prevImageBtn.setVisible(false);
+            nextImageBtn.setVisible(false);
+        });
+
+        photoSP.getChildren().addAll(imageViewRoom, prevImageBtn, nextImageBtn);
+
+        infoRoomVB.getChildren().add(photoSP);
+
+        VBox descriptionVB = new VBox(10);
+        descriptionVB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+
+        Label nameRoom = new Label(room.getRoomName());
+        nameRoom.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        descriptionVB.getChildren().add(nameRoom);
+
+        Label descriptionRoom = new Label(room.getRoomDescription());
+        descriptionRoom.setWrapText(true);
+        descriptionRoom.setStyle("-fx-font-size: 18px;");
+        descriptionVB.getChildren().add(descriptionRoom);
+
+        Label squareRoom = new Label(String.format("Площадь: %d м²", Math.round(room.getRoomSquare())));
+        squareRoom.setStyle("-fx-font-size: 19px;");
+        descriptionVB.getChildren().add(squareRoom);
+
+        infoRoomVB.getChildren().add(descriptionVB);
+
+        FlowPane roomFeaturesContainer = new FlowPane();
+        roomFeaturesContainer.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        roomFeaturesContainer.setHgap(3);
+        roomFeaturesContainer.setVgap(4);
+        roomFeaturesContainer.setAlignment(Pos.BOTTOM_LEFT);
+        roomFeaturesContainer.setPadding(new Insets(0, 0, 10, 10));
+
+        List<RoomFeature> features = new RoomFeatureRelationService().getAllRoomFeatureByRoomId(room.getIdRooms());
+
+        for (RoomFeature feature : features) {
+            Label label = new Label(feature.getFeatureName());
+            label.getStyleClass().add("feature-label-big");
+            roomFeaturesContainer.getChildren().add(label);
+        }
+
+        infoRoomVB.getChildren().add(roomFeaturesContainer);
+
+        VBox numberSettingsVB = new VBox(10);
+        numberSettingsVB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        infoRoomVB.getChildren().add(numberSettingsVB);
+
+        Label numberSettingsLB = new Label("Настройки номера");
+        numberSettingsLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        numberSettingsVB.getChildren().add(numberSettingsLB);
+
+        VBox coundSleepingPlacesVB = new VBox(7);
+        numberSettingsVB.getChildren().add(coundSleepingPlacesVB);
+
+        Label roomSleepingPlaces = new Label("Число доступных мест: ");
+        roomSleepingPlaces.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        coundSleepingPlacesVB.getChildren().add(roomSleepingPlaces);
+
+        HBox countRoomSleepingPlacesHB = new HBox(8);
+        countRoomSleepingPlacesHB.setAlignment(Pos.CENTER_LEFT);
+
+        ImageView bedIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/bed.png"))));
+        bedIV.setFitHeight(20);
+        bedIV.setFitWidth(20);
+        bedIV.setPreserveRatio(true);
+
+        Label countRoomSleepingPlacesLB = new Label();
+        countRoomSleepingPlacesLB.setStyle("-fx-font-size: 16px;");
+
+        countRoomSleepingPlacesHB.getChildren().addAll(bedIV, countRoomSleepingPlacesLB);
+
+        coundSleepingPlacesVB.getChildren().add(countRoomSleepingPlacesHB);
+
+        short roomCountRoomSleepingPlaces = room.getRoomSleepingPlaces();
+        if (roomCountRoomSleepingPlaces == 1)
+            countRoomSleepingPlacesLB.setText("1 место");
+        else if (roomCountRoomSleepingPlaces > 1 && roomCountRoomSleepingPlaces <= 4)
+            countRoomSleepingPlacesLB.setText(String.format("%d места", roomCountRoomSleepingPlaces));
+        else
+            countRoomSleepingPlacesLB.setText(String.format("%d мест", roomCountRoomSleepingPlaces));
+
+        VBox foodVB = new VBox(7);
+        numberSettingsVB.getChildren().add(foodVB);
+
+        Label mealPlanLB = new Label("Питание");
+        mealPlanLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        foodVB.getChildren().add(mealPlanLB);
+
+        HBox foodHB = new HBox(5);
+        foodVB.getChildren().add(foodHB);
+
+        ImageView mealPlanIV = new ImageView();
+        mealPlanIV.setFitHeight(22);
+        mealPlanIV.setFitWidth(22);
+
+        Label mealPlanLB2 = new Label("Питание");
+        mealPlanLB2.setStyle("-fx-font-size: 16px;");
+
+        foodHB.getChildren().addAll(mealPlanIV, mealPlanLB2);
+
+        mealPlanLB2.setText(room.getMealPlan().toString());
+
+        if (mealPlanLB2.getText().equals("Без питания"))
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/no-food.png"))));
+        else
+            mealPlanIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/food.png"))));
+
+        VBox refundVB = new VBox(7);
+        numberSettingsVB.getChildren().add(refundVB);
+
+        Label refundLB = new Label("Возврат");
+        refundLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        refundVB.getChildren().add(refundLB);
+
+        HBox refundHB = new HBox(5);
+        refundVB.getChildren().add(refundHB);
+
+        ImageView refundIV = new ImageView();
+        refundIV.setFitHeight(22);
+        refundIV.setFitWidth(22);
+
+        Label refundLB2 = new Label(room.getRefundPolicy().toString());
+        refundLB2.setStyle("-fx-font-size: 16px;");
+
+        refundHB.getChildren().addAll(refundIV, refundLB2);
+
+        if (refundLB2.getText().equals("Платная отмена"))
+            refundIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/paid-cancellation.png"))));
+        else
+            refundIV.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/free-cancellation.png"))));
+
+        VBox paymentVB = new VBox(7);
+        numberSettingsVB.getChildren().add(paymentVB);
+
+        Label paymentLB = new Label("Оплата");
+        paymentLB.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        paymentVB.getChildren().add(paymentLB);
+
+        HBox paymentHB = new HBox(5);
+        paymentVB.getChildren().add(paymentHB);
+
+        ImageView paymentMethodIV = new ImageView();
+        paymentMethodIV.setFitHeight(22);
+        paymentMethodIV.setFitWidth(22);
+
+        Label paymentLB2 = new Label(room.getPaymentMethod().toString());
+        paymentLB2.setStyle("-fx-font-size: 16px;");
+
+        paymentHB.getChildren().addAll(paymentMethodIV, paymentLB2);
+
+        paymentMethodIV.setImage(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/payment.png"))));
+
+        HBox bottomHB = new HBox();
+        bottomHB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
+        infoRoomVB.getChildren().add(bottomHB);
+        bottomHB.setAlignment(Pos.CENTER_LEFT);
+
+        VBox minPriceRoomVB = new VBox(5);
+        minPriceRoomVB.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(minPriceRoomVB, Priority.ALWAYS);
+
+        HBox discountPriceHB = new HBox(3);
+        discountPriceHB.setAlignment(Pos.CENTER_LEFT);
+
+        ImageView imageDiscount = new ImageView(DISCOUND_IMAGE);
+        imageDiscount.setFitWidth(30);
+        imageDiscount.setFitHeight(30);
+        imageDiscount.setPreserveRatio(true);
+
+        Label actualMinPriceLB = new Label(String.format("%.2f", room.getRoomPrice()));
+        actualMinPriceLB.getStyleClass().add("room-small-price");
+
+        ImageView imageRuble = new ImageView(RUBLE_IMAGE);
+        imageRuble.setFitWidth(25);
+        imageRuble.setFitHeight(25);
+        imageRuble.setPreserveRatio(true);
+
+        discountPriceHB.getChildren().addAll(imageDiscount, actualMinPriceLB, imageRuble);
+
+        minPriceRoomVB.getChildren().add(discountPriceHB);
+
+        HBox actualPriceHB = new HBox();
+        actualPriceHB.setAlignment(Pos.CENTER_LEFT);
+
+        Text actualPriceLB = new Text(String.format("%.2f", room.getRoomPrice() + room.getRoomPrice() * 0.05));
+        actualPriceLB.getStyleClass().add("room-actual-price");
+
+        ImageView imageSmallRuble = new ImageView(RUBLE_SMALL_IMAGE);
+        imageSmallRuble.setFitWidth(20);
+        imageSmallRuble.setFitHeight(20);
+        imageSmallRuble.setPreserveRatio(true);
+
+        actualPriceHB.getChildren().addAll(actualPriceLB, imageSmallRuble);
+
+        minPriceRoomVB.getChildren().add(actualPriceHB);
+
+        bottomHB.getChildren().add(minPriceRoomVB);
+
+        Button toBook = new Button("Забронировать");
+        toBook.setPrefWidth(250);
+        toBook.getStyleClass().add("show-result-button");
+        toBook.prefHeightProperty().bind(bottomHB.heightProperty().subtract(40));
+        toBook.setOnAction(e -> {
+            new CheckoutWindow(room);
+        });
+
+        bottomHB.getChildren().add(toBook);
+
+        overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (!infoRoomScrollPane.isVisible()) return;
+
+            Point2D pointInWindow = infoRoomScrollPane.screenToLocal(event.getScreenX(), event.getScreenY());
+            if (pointInWindow != null && infoRoomScrollPane.contains(pointInWindow))
+                return;
+            else
+                hide();
+        });
+    }
+
+    private void hide() {
+        shadowPane.setVisible(false);
+        infoRoomScrollPane.setVisible(false);
+        closeBtn.setVisible(false);
+    }
+
+    private void show() {
+        shadowPane.setVisible(true);
+        infoRoomScrollPane.setVisible(true);
+        closeBtn.setVisible(true);
+    }
+
+    private void updateVisibleButton() {
+        if (room == null) return;
+        int index = room.getCurrentImageIndex();
+        int max = room.getRoomPhotos().length - 1;
+        prevImageBtn.setVisible(index > 0);
+        nextImageBtn.setVisible(index < max);
+
+        imageViewRoom.setImage(room.getImageByNumber(room.getCurrentImageIndex()));
+
+        imageViewRoom.requestFocus();
+    }
+
+    private static VBox createShapeCheckInDates(String action, LocalDate date, LocalTime checkTime) {
+        VBox resVB = new VBox();
+        resVB.setPrefWidth(200);
+        resVB.setPadding(new Insets(5, 10, 5, 10));
+        resVB.setStyle("-fx-background-color: rgba(240, 240, 240); -fx-background-radius: 12px;");
+
+        Label actionLB = new Label(action);
+        actionLB.setStyle("-fx-text-fill: rgba(180, 180, 180); -fx-font-weight: bold;");
+        resVB.getChildren().add(actionLB);
+
+        Label infoActionLB = new Label(getTextByUserData(date) + ", "
+                + checkTime.format(DateTimeFormatter.ofPattern("HH:mm")));
+        infoActionLB.setStyle("-fx-font-size: 18px;");
+        resVB.getChildren().add(infoActionLB);
+
+        return resVB;
+    }
+
+    private static String getTextByUserData(LocalDate date) {
+        return date.getDayOfMonth() + " " + getRussianMonthName(date.getMonthValue()).substring(0, 3).toLowerCase();
+    }
+
+    private String countNight(LocalDate startDate, LocalDate endDate) {
+        int countNightI = 0;
+
+        if(startDate.getYear() == endDate.getYear())
+            countNightI = endDate.getDayOfYear() - startDate.getDayOfYear();
+        else
+            countNightI = startDate.lengthOfYear() - startDate.getDayOfYear() + endDate.getDayOfYear();
+
+        if (countNightI != 11 && String.format("%d", countNightI).endsWith("1"))
+            return String.format("%d ночь", countNightI);
+
+        if (String.format("%d", countNightI).endsWith("2") || String.format("%d", countNightI).endsWith("3") || String.format("%d", countNightI).endsWith("4"))
+            return String.format("%d ночи", countNightI);
+
+        return String.format("%d ночей", countNightI);
+    }
+
+    private Node createGuestProfile(int countGuest, String typeGuest) {
+        VBox rootVB = new VBox();
+        rootVB.setStyle("-fx-background-color: rgba(245, 245, 245); -fx-background-radius: 15px;");
+
+        gridPane = new GridPane();
+        gridPane.setStyle("-fx-background-color: white; -fx-background-radius: 15px;");
+        gridPane.setPadding(new Insets(20));
+        rootVB.getChildren().add(gridPane);
+
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+
+        gridPane.getColumnConstraints().addAll(col1, col2);
+
+        for(int i = 1; i <= 6; i ++)
+            gridPane.getRowConstraints().add(new RowConstraints());
+
+        HBox topLeftHB = new HBox(5);
+        topLeftHB.setAlignment(Pos.CENTER_LEFT);
+        gridPane.getChildren().add(topLeftHB);
+
+        Label countGuestLB = new Label(String.format("%d", countGuest));
+        countGuestLB.setStyle("-fx-background-color: black; -fx-text-fill: white; -fx-background-radius: 90px; -fx-font-size: 18px; -fx-font-weight: bold;");
+        topLeftHB.getChildren().add(countGuestLB);
+        countGuestLB.setPrefWidth(27);
+        countGuestLB.setPrefHeight(20);
+        countGuestLB.setAlignment(Pos.CENTER);
 
 
+        Label typeGuestLB = new Label(typeGuest);
+        typeGuestLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        topLeftHB.getChildren().add(typeGuestLB);
+
+        Button throwOff = new Button("Сбросить");
+        gridPane.getChildren().add(throwOff);
+        throwOff.getStyleClass().add("throw-off");
+        GridPane.setColumnIndex(throwOff, 1);
+        GridPane.setHalignment(throwOff, HPos.RIGHT);
+        throwOff.setOnAction(e -> {
+
+        });
+
+        TextField firstNameTF = new TextField();
+        setStateInputControl(0, 1, firstNameTF, "Фамилия");
+
+        ComboBox<String> genderCB = new ComboBox<>();
+        setStateInputControl(0, 2, genderCB.getEditor(), "Пол");
+        genderCB.getItems().addAll("Мужской", "Женский");
+
+        TextField citizenshipTF = new TextField();
+        setStateInputControl(0, 3, citizenshipTF, "Гражданство");
+        citizenshipTF.setText("Россия");
+        citizenshipTF.setEditable(false);
+
+        TextField passportTF = new TextField();
+        setStateInputControl(0, 4, passportTF, "Серия и номер");
+
+        TextField nameTF = new TextField();
+        setStateInputControl(1, 1, nameTF, "Имя");
+
+        TextField birthdayTF = new TextField();
+        setStateInputControl(1, 2, birthdayTF, "Дата рождения");
+
+        TextField docTypeTF = new TextField();
+        setStateInputControl(1, 3, docTypeTF, "Тип документа");
+        docTypeTF.setText("Паспорт гражданина РФ");
+        docTypeTF.setEditable(false);
+
+        TextField validityPeriodTF = new TextField();
+        setStateInputControl(1, 4, validityPeriodTF, "Срок действия");
+
+        return rootVB;
+    }
+
+    private void setStateInputControl(int col, int row, TextInputControl node, String promptText) {
+        node.setPromptText(promptText);
+        GridPane.setRowIndex(node, row);
+        GridPane.setColumnIndex(node, col);
+        node.getStyleClass().add("input-guest-state-control");
+        GridPane.setMargin(node, new Insets(10));
+        node.textProperty().addListener((ob, oldV, newV) -> {
+            if(!newV.isEmpty())
+                node.setStyle("-fx-text-fill: black;");
+            else
+                node.setStyle("");
+        });
+
+        gridPane.getChildren().add(node);
     }
 }

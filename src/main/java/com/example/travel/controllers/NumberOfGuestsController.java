@@ -16,6 +16,8 @@ public class NumberOfGuestsController extends Button {
     int adultsCount = 2;
     int childrenCount = 0;
     static int totalStatic = 2;
+    static int adultsCountStatic = 2;
+    static int childrenCountStatic = 0;
 
     private static final double GRID_PANE_WIDTH = 250;
     private static final double GRID_PANE_HEIGHT = 150;
@@ -121,6 +123,8 @@ public class NumberOfGuestsController extends Button {
 
     private void updateButtonText() {
         int total = adultsCount + childrenCount;
+        adultsCountStatic = adultsCount;
+        childrenCountStatic = childrenCount;
         totalStatic = total;
         Predicate<Hotel> countGuestsPredicate = hotel ->
                 new RoomService().getMaxRoomSleepingPlaces(hotel.getIdHotel()) >= total;

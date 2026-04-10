@@ -1,12 +1,9 @@
 package com.example.travel.controllers;
 
-import com.example.travel.models.HotelFeature;
 import com.example.travel.models.Room;
 import com.example.travel.models.RoomFeature;
 import com.example.travel.services.RoomFeatureRelationService;
-import com.example.travel.services.RoomFeatureService;
 import com.example.travel.util.HelpFullClass;
-import com.example.travel.util.ImageUtils;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -19,13 +16,11 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
 import java.util.List;
 import java.util.Objects;
 
-import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
 import static com.example.travel.util.ImageUtils.round;
 
@@ -339,7 +334,7 @@ public class RoomCard extends VBox {
         selectBtn.getStyleClass().add("select-button");
         selectBtn.setPrefWidth(Double.MAX_VALUE);
         selectBtn.setOnAction(e -> {
-            new CheckoutWindow();
+            new CheckoutWindow(room);
         });
 
         selectVB.getChildren().add(selectBtn);
@@ -747,7 +742,7 @@ public class RoomCard extends VBox {
         toBook.getStyleClass().add("show-result-button");
         toBook.prefHeightProperty().bind(bottomHB.heightProperty().subtract(40));
         toBook.setOnAction(e -> {
-            new CheckoutWindow();
+            new CheckoutWindow(room);
         });
 
         bottomHB.getChildren().add(toBook);

@@ -711,3 +711,43 @@
 .images-list-view .scroll-bar:vertical {
     -fx-vbar-policy: never;
 }
+
+.throw-off {
+    -fx-background-color: rgba(245, 245, 245);
+    -fx-border-width: 0;
+    -fx-background-radius: 12;
+    -fx-text-fill: rgba(180, 180, 180);
+    -fx-effect: none;
+    -fx-padding: 5 10 5 10;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.throw-off:hover {
+    -fx-text-fill: rgba(150, 150, 150);
+    -fx-cursor: hand;
+}
+
+.throw-off:pressed {
+    -fx-background-color: rgba(210, 210, 210);
+}
+
+.input-guest-state-control {
+    -fx-background-color: rgba(245, 245, 245);
+    -fx-background-radius: 12;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-border-color: transparent;
+    -fx-text-fill: rgba(180, 180, 180);
+    -fx-effect: none;
+    -fx-padding: 5 10 5 10;
+    -fx-font-size: 18px;
+}
+
+.input-guest-state-control:hover {
+    -fx-border-color: rgba(180, 180, 180);
+}
+
+.input-guest-state-control:focused {
+    -fx-border-color: rgba(185, 10, 185);
+}
