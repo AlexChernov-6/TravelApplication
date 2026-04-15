@@ -733,7 +733,7 @@
 }
 
 .input-guest-state-control {
-    -fx-background-color: rgba(245, 245, 245);
+    -fx-background-color: rgba(235, 235, 235);
     -fx-background-radius: 12;
     -fx-border-width: 1;
     -fx-border-radius: 12;
@@ -750,4 +750,9 @@
 
 .input-guest-state-control:focused {
     -fx-border-color: rgba(185, 10, 185);
+}
+
+.bold-text {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
 }

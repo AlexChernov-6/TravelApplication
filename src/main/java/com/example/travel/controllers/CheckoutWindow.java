@@ -22,7 +22,9 @@ import javafx.scene.web.WebView;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.example.travel.controllers.HotelCell.*;
@@ -48,6 +50,10 @@ public class CheckoutWindow extends ScrollPane {
     private Button prevImageBtn, nextImageBtn;
 
     private GridPane gridPane;
+
+    private final CustomRadioParent customRadioParent = new CustomRadioParent();
+
+    private final Map<VBox, CustomRadioButton> radioButtonMap = new HashMap<>();
 
     public CheckoutWindow(Room room) {
         this.room = room;
@@ -304,6 +310,8 @@ public class CheckoutWindow extends ScrollPane {
 
         for(; i <= NumberOfGuestsController.totalStatic; i++)
             parentVB.getChildren().add(createGuestProfile(i, "Ребёнок"));
+
+        updateBuyer();
     }
 
     private void createMap() {
@@ -856,15 +864,14 @@ public class CheckoutWindow extends ScrollPane {
         for(int i = 1; i <= 6; i ++)
             gridPane.getRowConstraints().add(new RowConstraints());
 
-        HBox topLeftHB = new HBox(5);
+        HBox topLeftHB = new HBox(8);
         topLeftHB.setAlignment(Pos.CENTER_LEFT);
-        gridPane.getChildren().add(topLeftHB);
 
         Label countGuestLB = new Label(String.format("%d", countGuest));
-        countGuestLB.setStyle("-fx-background-color: black; -fx-text-fill: white; -fx-background-radius: 90px; -fx-font-size: 18px; -fx-font-weight: bold;");
+        countGuestLB.setStyle("-fx-background-color: black; -fx-text-fill: white; -fx-background-radius: 90px; -fx-font-size: 16px; -fx-font-weight: bold;");
         topLeftHB.getChildren().add(countGuestLB);
-        countGuestLB.setPrefWidth(27);
-        countGuestLB.setPrefHeight(20);
+        countGuestLB.setPrefWidth(24.5);
+        countGuestLB.setPrefHeight(18);
         countGuestLB.setAlignment(Pos.CENTER);
 
 
@@ -872,13 +879,39 @@ public class CheckoutWindow extends ScrollPane {
         typeGuestLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
         topLeftHB.getChildren().add(typeGuestLB);
 
+        if(typeGuest.equals("Взрослый")) {
+            VBox topVB = new VBox(3);
+            topVB.getChildren().add(topLeftHB);
+
+            CustomRadioButton btn = new CustomRadioButton(customRadioParent, countGuest == 1);
+            btn.setTextBtn("Является покупателем");
+            btn.addStyleButtonText("bold-text");
+            btn.addSecondAction(e -> {
+                updateBuyer();
+            });
+
+            radioButtonMap.put(rootVB, btn);
+
+            topVB.getChildren().add(btn);
+
+            gridPane.getChildren().add(topVB);
+        } else {
+            gridPane.getChildren().add(topLeftHB);
+        }
+
         Button throwOff = new Button("Сбросить");
+        throwOff.setUserData(gridPane);
         gridPane.getChildren().add(throwOff);
         throwOff.getStyleClass().add("throw-off");
         GridPane.setColumnIndex(throwOff, 1);
         GridPane.setHalignment(throwOff, HPos.RIGHT);
         throwOff.setOnAction(e -> {
-
+            for(Node node : ((GridPane) throwOff.getUserData()).getChildren()) {
+                if(node instanceof TextField && ((TextField) node).isEditable()) {
+                    node.setStyle("");
+                    ((TextField) node).setText("");
+                }
+            }
         });
 
         TextField firstNameTF = new TextField();
@@ -927,5 +960,42 @@ public class CheckoutWindow extends ScrollPane {
         });
 
         gridPane.getChildren().add(node);
+    }
+
+    private void updateBuyer() {
+        for(Map.Entry<VBox, CustomRadioButton> entry : radioButtonMap.entrySet()) {
+            VBox key = entry.getKey();
+            key.getChildren().removeIf(node -> node instanceof HBox);
+
+            if(entry.getValue().getSelected()) {
+                HBox bottomHB = new HBox(20);
+                bottomHB.setPadding(new Insets(20));
+                key.getChildren().add(bottomHB);
+
+                TextField emailTF = new TextField();
+                emailTF.setPromptText("Email *");
+                emailTF.getStyleClass().add("input-guest-state-control");
+                emailTF.prefWidthProperty().bind(key.widthProperty().divide(2).subtract(30));
+                emailTF.textProperty().addListener((ob, oldV, newV) -> {
+                    if (!newV.isEmpty())
+                        emailTF.setStyle("-fx-text-fill: black;");
+                    else
+                        emailTF.setStyle("");
+                });
+                bottomHB.getChildren().add(emailTF);
+
+                TextField phoneTF = new TextField();
+                phoneTF.setPromptText("Номер телефона");
+                phoneTF.getStyleClass().add("input-guest-state-control");
+                phoneTF.prefWidthProperty().bind(key.widthProperty().divide(2).subtract(30));
+                phoneTF.textProperty().addListener((ob, oldV, newV) -> {
+                    if (!newV.isEmpty())
+                        phoneTF.setStyle("-fx-text-fill: black;");
+                    else
+                        phoneTF.setStyle("");
+                });
+                bottomHB.getChildren().add(phoneTF);
+            }
+        }
     }
 }
