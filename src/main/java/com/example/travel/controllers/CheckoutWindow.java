@@ -197,7 +197,7 @@ public class CheckoutWindow extends ScrollPane {
             if (e.getButton() == MouseButton.PRIMARY) {
                 if (room.getHotel().getLongitude() != null && room.getHotel().getLatitude() != null) {
                     if (overSP.getChildren().stream().filter(node ->
-                            node.getUserData() != null && node.getUserData().equals("mapWebView")).toList().isEmpty())
+                            node.getUserData() != null && node.getUserData().equals("mapWebViewCheckoutWin")).toList().isEmpty())
                         createMap();
                     showMap();
                 } else System.out.println("Координаты пусты");
@@ -347,7 +347,7 @@ public class CheckoutWindow extends ScrollPane {
 
         webView = new WebView();
         webView.setVisible(false);
-        webView.setUserData("mapWebView");
+        webView.setUserData("mapWebViewCheckoutWin");
 
         double startWidthWebView = overSP.getWidth() * 0.7;
         double startHeightWebView = overSP.getHeight() * 0.8;
@@ -714,62 +714,6 @@ public class CheckoutWindow extends ScrollPane {
         paymentMethodIV.setImage(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/payment.png"))));
 
-        HBox bottomHB = new HBox();
-        bottomHB.setStyle("-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 15;");
-        infoRoomVB.getChildren().add(bottomHB);
-        bottomHB.setAlignment(Pos.CENTER_LEFT);
-
-        VBox minPriceRoomVB = new VBox(5);
-        minPriceRoomVB.setAlignment(Pos.TOP_LEFT);
-        HBox.setHgrow(minPriceRoomVB, Priority.ALWAYS);
-
-        HBox discountPriceHB = new HBox(3);
-        discountPriceHB.setAlignment(Pos.CENTER_LEFT);
-
-        ImageView imageDiscount = new ImageView(DISCOUND_IMAGE);
-        imageDiscount.setFitWidth(30);
-        imageDiscount.setFitHeight(30);
-        imageDiscount.setPreserveRatio(true);
-
-        Label actualMinPriceLB = new Label(String.format("%.2f", room.getRoomPrice()));
-        actualMinPriceLB.getStyleClass().add("room-small-price");
-
-        ImageView imageRuble = new ImageView(RUBLE_IMAGE);
-        imageRuble.setFitWidth(25);
-        imageRuble.setFitHeight(25);
-        imageRuble.setPreserveRatio(true);
-
-        discountPriceHB.getChildren().addAll(imageDiscount, actualMinPriceLB, imageRuble);
-
-        minPriceRoomVB.getChildren().add(discountPriceHB);
-
-        HBox actualPriceHB = new HBox();
-        actualPriceHB.setAlignment(Pos.CENTER_LEFT);
-
-        Text actualPriceLB = new Text(String.format("%.2f", room.getRoomPrice() + room.getRoomPrice() * 0.05));
-        actualPriceLB.getStyleClass().add("room-actual-price");
-
-        ImageView imageSmallRuble = new ImageView(RUBLE_SMALL_IMAGE);
-        imageSmallRuble.setFitWidth(20);
-        imageSmallRuble.setFitHeight(20);
-        imageSmallRuble.setPreserveRatio(true);
-
-        actualPriceHB.getChildren().addAll(actualPriceLB, imageSmallRuble);
-
-        minPriceRoomVB.getChildren().add(actualPriceHB);
-
-        bottomHB.getChildren().add(minPriceRoomVB);
-
-        Button toBook = new Button("Забронировать");
-        toBook.setPrefWidth(250);
-        toBook.getStyleClass().add("show-result-button");
-        toBook.prefHeightProperty().bind(bottomHB.heightProperty().subtract(40));
-        toBook.setOnAction(e -> {
-            new CheckoutWindow(room);
-        });
-
-        bottomHB.getChildren().add(toBook);
-
         overSP.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (!infoRoomScrollPane.isVisible()) return;
 
@@ -900,16 +844,26 @@ public class CheckoutWindow extends ScrollPane {
         }
 
         Button throwOff = new Button("Сбросить");
-        throwOff.setUserData(gridPane);
+        throwOff.setUserData(rootVB);
         gridPane.getChildren().add(throwOff);
         throwOff.getStyleClass().add("throw-off");
         GridPane.setColumnIndex(throwOff, 1);
         GridPane.setHalignment(throwOff, HPos.RIGHT);
         throwOff.setOnAction(e -> {
-            for(Node node : ((GridPane) throwOff.getUserData()).getChildren()) {
-                if(node instanceof TextField && ((TextField) node).isEditable()) {
-                    node.setStyle("");
-                    ((TextField) node).setText("");
+            for(Node node : ((Pane) throwOff.getUserData()).getChildren()) {
+                if(node instanceof Pane) {
+                    for (Node childPane : ((Pane) node).getChildren()) {
+                        if(childPane instanceof Pane) {
+                            for (Node childNode : ((Pane) childPane).getChildren()) {
+                                if (childNode instanceof TextField && ((TextField) childNode).isEditable()) {
+                                    childNode.setStyle("");
+                                    ((TextField) childNode).setText("");
+                                } else if (childNode instanceof ComboBox<?>) {
+                                    ((ComboBox<?>) childNode).setValue(null);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -917,9 +871,69 @@ public class CheckoutWindow extends ScrollPane {
         TextField firstNameTF = new TextField();
         setStateInputControl(0, 1, firstNameTF, "Фамилия");
 
+        VBox inputControlVB = new VBox();
+        GridPane.setRowIndex(inputControlVB, 2);
+        GridPane.setColumnIndex(inputControlVB, 0);
+        GridPane.setMargin(inputControlVB, new Insets(10));
+        inputControlVB.setAlignment(Pos.BOTTOM_CENTER);
+        gridPane.getChildren().add(inputControlVB);
+
+        Label hintLB = new Label("Пол");
+        hintLB.getStyleClass().add("hint-label-registration");
+        VBox.setMargin(hintLB, new Insets(0, 0, 0, 5));
+        hintLB.prefWidthProperty().bind(firstNameTF.widthProperty());
+        hintLB.setVisible(false);
+        hintLB.setManaged(false);
+
         ComboBox<String> genderCB = new ComboBox<>();
-        setStateInputControl(0, 2, genderCB.getEditor(), "Пол");
+        genderCB.setPromptText("Пол");
+        genderCB.setEditable(true);
+        genderCB.getEditor().setEditable(false);
+        genderCB.getStyleClass().setAll("combo-box-guest-state");
+        genderCB.prefWidthProperty().bind(firstNameTF.widthProperty());
+        genderCB.getEditor().setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if(genderCB.getValue() == null) {
+                    genderCB.getEditor().setText(genderCB.getPromptText());
+                    genderCB.getEditor().setStyle("-fx-text-fill: rgba(180,180,180);");
+                }
+
+                if (genderCB.isShowing()) {
+                    genderCB.hide();
+                } else {
+                    genderCB.show();
+                }
+                e.consume();
+            }
+        });
         genderCB.getItems().addAll("Мужской", "Женский");
+        genderCB.valueProperty().addListener((obs, old, val) -> {
+            if (val == null) {
+                genderCB.getEditor().setText(genderCB.getPromptText());
+                genderCB.getEditor().setStyle("-fx-text-fill: rgba(180,180,180);");
+            } else {
+                genderCB.getEditor().setText(val);
+                genderCB.getEditor().setStyle("-fx-text-fill: black;");
+            }
+        });
+        genderCB.setValue(null);
+
+        inputControlVB.getChildren().add(genderCB);
+
+        hintLB.textProperty().addListener((ob, oldV, newV) -> {
+            if(newV.isEmpty()) {
+                hintLB.setVisible(false);
+                hintLB.setManaged(false);
+                hintLB.setStyle("");
+                genderCB.setStyle("");
+            }
+            else {
+                hintLB.setVisible(true);
+                hintLB.setManaged(true);
+                hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
+                genderCB.setStyle("-fx-border-color: rgba(130,0,0);");
+            }
+        });
 
         TextField citizenshipTF = new TextField();
         setStateInputControl(0, 3, citizenshipTF, "Гражданство");
@@ -947,19 +961,45 @@ public class CheckoutWindow extends ScrollPane {
     }
 
     private void setStateInputControl(int col, int row, TextInputControl node, String promptText) {
+        VBox inputControlVB = new VBox();
+        GridPane.setRowIndex(inputControlVB, row);
+        GridPane.setColumnIndex(inputControlVB, col);
+        GridPane.setMargin(inputControlVB, new Insets(10));
+
+        Label hintLB = new Label();
+        hintLB.getStyleClass().add("hint-label-registration");
+        VBox.setMargin(hintLB, new Insets(0, 0, 0, 5));
+        hintLB.prefWidthProperty().bind(node.widthProperty());
+        hintLB.textProperty().addListener((ob, oldV, newV) -> {
+            if(newV.isEmpty()) {
+                hintLB.setStyle("");
+                hintLB.setManaged(false);
+                hintLB.setVisible(false);
+                node.setStyle("");
+            }
+            else {
+                hintLB.setManaged(true);
+                hintLB.setVisible(true);
+                hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
+                node.setStyle("-fx-border-color: rgba(130,0,0);");
+            }
+        });
+        inputControlVB.getChildren().add(hintLB);
+        hintLB.setVisible(false);
+        hintLB.setManaged(false);
+
         node.setPromptText(promptText);
-        GridPane.setRowIndex(node, row);
-        GridPane.setColumnIndex(node, col);
+        node.setUserData(hintLB);
         node.getStyleClass().add("input-guest-state-control");
-        GridPane.setMargin(node, new Insets(10));
         node.textProperty().addListener((ob, oldV, newV) -> {
             if(!newV.isEmpty())
                 node.setStyle("-fx-text-fill: black;");
             else
                 node.setStyle("");
         });
+        inputControlVB.getChildren().add(node);
 
-        gridPane.getChildren().add(node);
+        gridPane.getChildren().add(inputControlVB);
     }
 
     private void updateBuyer() {
@@ -968,33 +1008,88 @@ public class CheckoutWindow extends ScrollPane {
             key.getChildren().removeIf(node -> node instanceof HBox);
 
             if(entry.getValue().getSelected()) {
-                HBox bottomHB = new HBox(20);
-                bottomHB.setPadding(new Insets(20));
+                HBox bottomHB = new HBox(10);
+                bottomHB.setPadding(new Insets(25));
                 key.getChildren().add(bottomHB);
+
+                VBox inputControlVB = new VBox();
+                inputControlVB.setAlignment(Pos.BOTTOM_CENTER);
+                inputControlVB.prefWidthProperty().bind(bottomHB.widthProperty().divide(2).subtract(5));
+                bottomHB.getChildren().add(inputControlVB);
+
+                Label hintLB = new Label();
+                hintLB.getStyleClass().add("hint-label-registration");
+                VBox.setMargin(hintLB, new Insets(0, 0, 0, 5));
+                hintLB.prefWidthProperty().bind(inputControlVB.widthProperty());
+                inputControlVB.getChildren().add(hintLB);
+                hintLB.setVisible(false);
+                hintLB.setManaged(false);
 
                 TextField emailTF = new TextField();
                 emailTF.setPromptText("Email *");
                 emailTF.getStyleClass().add("input-guest-state-control");
-                emailTF.prefWidthProperty().bind(key.widthProperty().divide(2).subtract(30));
+                emailTF.prefWidthProperty().bind(inputControlVB.widthProperty());
                 emailTF.textProperty().addListener((ob, oldV, newV) -> {
                     if (!newV.isEmpty())
                         emailTF.setStyle("-fx-text-fill: black;");
                     else
                         emailTF.setStyle("");
                 });
-                bottomHB.getChildren().add(emailTF);
+                inputControlVB.getChildren().add(emailTF);
+
+                hintLB.textProperty().addListener((ob, oldV, newV) -> {
+                    if(newV.isEmpty()) {
+                        hintLB.setStyle("");
+                        hintLB.setManaged(false);
+                        hintLB.setVisible(false);
+                        emailTF.setStyle("");
+                    }
+                    else {
+                        hintLB.setManaged(true);
+                        hintLB.setVisible(true);
+                        hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
+                        emailTF.setStyle("-fx-border-color: rgba(130,0,0);");
+                    }
+                });
+
+                VBox inputControlVB2 = new VBox();
+                inputControlVB2.setAlignment(Pos.BOTTOM_CENTER);
+                inputControlVB2.prefWidthProperty().bind(bottomHB.widthProperty().divide(2).subtract(5));
+                bottomHB.getChildren().add(inputControlVB2);
+
+                Label hintLB2 = new Label();
+                hintLB2.getStyleClass().add("hint-label-registration");
+                VBox.setMargin(hintLB2, new Insets(0, 0, 0, 5));
+                hintLB2.prefWidthProperty().bind(inputControlVB2.widthProperty());
+                inputControlVB2.getChildren().add(hintLB2);
+                hintLB2.setVisible(false);
+                hintLB2.setManaged(false);
 
                 TextField phoneTF = new TextField();
                 phoneTF.setPromptText("Номер телефона");
                 phoneTF.getStyleClass().add("input-guest-state-control");
-                phoneTF.prefWidthProperty().bind(key.widthProperty().divide(2).subtract(30));
+                phoneTF.prefWidthProperty().bind(inputControlVB2.widthProperty());
                 phoneTF.textProperty().addListener((ob, oldV, newV) -> {
                     if (!newV.isEmpty())
                         phoneTF.setStyle("-fx-text-fill: black;");
                     else
                         phoneTF.setStyle("");
                 });
-                bottomHB.getChildren().add(phoneTF);
+                inputControlVB2.getChildren().add(phoneTF);
+
+                hintLB2.textProperty().addListener((ob, oldV, newV) -> {
+                    if(newV.isEmpty()) {
+                        hintLB2.setManaged(false);
+                        hintLB2.setStyle("");
+                        phoneTF.setStyle("");
+                    }
+                    else {
+                        hintLB2.setManaged(true);
+                        hintLB2.setVisible(true);
+                        hintLB2.setStyle("-fx-text-fill: rgba(130,0,0);");
+                        phoneTF.setStyle("-fx-border-color: rgba(130,0,0);");
+                    }
+                });
             }
         }
     }

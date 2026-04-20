@@ -756,3 +756,61 @@
     -fx-font-weight: bold;
     -fx-font-size: 14px;
 }
+
+.combo-box-guest-state {
+    -fx-background-color: rgba(235, 235, 235);
+    -fx-background-radius: 12;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-border-color: transparent;
+    -fx-effect: none;
+    -fx-font-size: 18px;
+}
+
+.combo-box-guest-state:hover {
+    -fx-border-color: rgba(180, 180, 180);
+    -fx-border-color: rgba(180, 180, 180);
+}
+
+.combo-box-guest-state:focused {
+    -fx-border-color: rgba(185, 10, 185);
+}
+
+/* Стиль для поля ввода внутри ComboBox (если редактируемый) */
+.combo-box-guest-state .text-field {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-width: 0;
+    -fx-font-size: 18px;
+}
+
+.combo-box-guest-state .text-field:hover {
+    -fx-cursor: hand;
+}
+
+/* Стиль для кнопки со стрелкой */
+.combo-box-guest-state .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box-guest-state .list-cell {
+    -fx-font-size: 16px;
+    -fx-background-radius: 12px;
+    -fx-background-color: transparent;
+}
+
+.combo-box-guest-state .list-cell:hover {
+    -fx-background-color: rgba(235, 235, 235);
+    -fx-text-fill: black;
+}
+
+.combo-box-guest-state .list-cell:selected {
+    -fx-background-color: rgba(235, 235, 235);
+    -fx-text-fill: black;
+}
+
+.combo-box-guest-state .list-view {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-background-color: white;
+}
