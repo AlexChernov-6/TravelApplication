@@ -1,11 +1,17 @@
 package com.example.travel.controllers;
 
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 import java.util.List;
 import java.util.Objects;
@@ -13,10 +19,14 @@ import java.util.Objects;
 public class CustomCheckButton extends Button {
 
     private boolean isSelected = false;
+    private Label buttonText;
+    private HBox rootHB;
+
+    private EventHandler<ActionEvent> secondEvent;
 
     public CustomCheckButton(String text, List<String> assemblyList) {
         getStyleClass().add("custom-button");
-        HBox rootHB = new HBox(10);
+        rootHB = new HBox(10);
         rootHB.setAlignment(Pos.CENTER_LEFT);
 
         Button selectedButton = new Button();
@@ -44,11 +54,13 @@ public class CustomCheckButton extends Button {
                 selectedButton.setStyle("-fx-border-color: rgba(200,200,200);");
         });
 
-        setOnAction(e -> {
-            if(assemblyList.contains(text))
-                assemblyList.remove(text);
-            else
-                assemblyList.add(text);
+        addEventHandler(ActionEvent.ACTION, e -> {
+            if(assemblyList != null) {
+                if (assemblyList.contains(text))
+                    assemblyList.remove(text);
+                else
+                    assemblyList.add(text);
+            }
 
             isSelected = !isSelected;
 
@@ -63,7 +75,7 @@ public class CustomCheckButton extends Button {
             }
         });
 
-        Label buttonText = new Label();
+        buttonText = new Label();
         buttonText.getStyleClass().add("sort-button-text");
         buttonText.setText(text);
 
@@ -74,5 +86,17 @@ public class CustomCheckButton extends Button {
 
     public boolean isSelected() {
         return isSelected;
+    }
+
+    public void updateText(Node node) {
+        rootHB.getChildren().remove(buttonText);
+        rootHB.getChildren().add(node);
+    }
+
+    public void addSecondAction(EventHandler<ActionEvent> event) {
+        if(secondEvent != null)
+            removeEventHandler(ActionEvent.ACTION, event);
+
+        addEventHandler(ActionEvent.ACTION, event);
     }
 }

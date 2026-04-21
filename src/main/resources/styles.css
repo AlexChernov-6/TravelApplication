@@ -814,3 +814,19 @@
     -fx-border-radius: 12;
     -fx-background-color: white;
 }
+
+.hint-label-registration-text {
+    -fx-fill: rgba(100,100,100);
+    -fx-font-size: 13px;
+}
+
+.documents-button-text {
+    -fx-fill: rgba(100,100,100);
+    -fx-font-size: 13.5px;
+    -fx-underline: true;
+    -fx-cursor: hand;
+}
+
+.documents-button-text:hover {
+    -fx-fill: #da4df0;
+}

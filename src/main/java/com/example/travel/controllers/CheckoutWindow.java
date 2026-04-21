@@ -16,6 +16,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
@@ -27,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
-import static com.example.travel.controllers.HotelCell.RUBLE_SMALL_IMAGE;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 import static com.example.travel.util.ImageUtils.round;
 
@@ -55,6 +56,8 @@ public class CheckoutWindow extends ScrollPane {
 
     private final Map<VBox, CustomRadioButton> radioButtonMap = new HashMap<>();
 
+    private int countNightI = 1;
+
     public CheckoutWindow(Room room) {
         this.room = room;
         StackPane overSP = PopularDestinationsController.getOverlaySP();
@@ -71,9 +74,8 @@ public class CheckoutWindow extends ScrollPane {
         setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         getStyleClass().add("scroll-pane");
-        Platform.runLater(() -> {
-            new HelpFullClass().scrollPaneAnimation(this);
-        });
+        //new HelpFullClass().scrollPaneAnimation(this);
+
         prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
         prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
 
@@ -137,10 +139,19 @@ public class CheckoutWindow extends ScrollPane {
 
         paymentVB.getChildren().addAll(paymentLB, infoLB);
 
+        HBox osnHB = new HBox(20);
+        parentVB.getChildren().add(osnHB);
+
+        VBox leftVB = new VBox();
+        leftVB.setStyle("-fx-background-color: rgba(230, 230, 230);");
+        leftVB.setSpacing(10);
+        HBox.setHgrow(leftVB, Priority.ALWAYS);
+        osnHB.getChildren().add(leftVB);
+
         VBox hotelInfoHeader = new VBox();
         hotelInfoHeader.setPadding(new Insets(15, 20, 15, 20));
         hotelInfoHeader.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
-        parentVB.getChildren().add(hotelInfoHeader);
+        leftVB.getChildren().add(hotelInfoHeader);
 
         HBox hotelNameHB = new HBox();
 
@@ -210,7 +221,7 @@ public class CheckoutWindow extends ScrollPane {
 
         HBox roomHB = new HBox(10);
         roomHB.setStyle("-fx-background-color: white; -fx-background-radius: 15px;");
-        parentVB.getChildren().add(roomHB);
+        leftVB.getChildren().add(roomHB);
 
         StackPane photosStackPane = new StackPane();
         photosStackPane.setPrefWidth(200);
@@ -284,8 +295,8 @@ public class CheckoutWindow extends ScrollPane {
         aboutTheRoomHB.setPrefHeight(30);
         aboutTheRoomHB.setMaxWidth(USE_PREF_SIZE);
         aboutTheRoomHB.setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
-                if(infoRoomScrollPane == null)
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (infoRoomScrollPane == null)
                     createWinAboutTheRoom();
                 show();
             }
@@ -305,13 +316,174 @@ public class CheckoutWindow extends ScrollPane {
         bottomVB.getChildren().add(aboutTheRoomHB);
 
         int i = 1;
-        for(; i <= NumberOfGuestsController.adultsCountStatic; i ++)
-            parentVB.getChildren().add(createGuestProfile(i, "Взрослый"));
+        for (; i <= NumberOfGuestsController.adultsCountStatic; i++)
+            leftVB.getChildren().add(createGuestProfile(i, "Взрослый"));
 
-        for(; i <= NumberOfGuestsController.totalStatic; i++)
-            parentVB.getChildren().add(createGuestProfile(i, "Ребёнок"));
+        for (; i <= NumberOfGuestsController.totalStatic; i++)
+            leftVB.getChildren().add(createGuestProfile(i, "Ребёнок"));
 
         updateBuyer();
+
+        VBox rightVB = new VBox(10);
+        rightVB.setMaxHeight(USE_PREF_SIZE);
+        rightVB.setPrefWidth(350);
+        rightVB.setMinWidth(350);
+        rightVB.setPadding(new Insets(15, 20, 15, 20));
+        rightVB.setStyle("-fx-background-color: white; -fx-background-radius: 12px;");
+        osnHB.getChildren().add(rightVB);
+
+        GridPane topGP = new GridPane();
+        topGP.getColumnConstraints().addAll(new ColumnConstraints(), new ColumnConstraints());
+        topGP.getRowConstraints().addAll(new RowConstraints(), new RowConstraints());
+        topGP.setPrefWidth(310);
+        topGP.setMinWidth(310);
+        topGP.setMaxWidth(310);
+        rightVB.getChildren().add(topGP);
+
+        Label resLB = new Label("Итого");
+        resLB.setStyle("-fx-font-weight: bold; -fx-font-size: 22px;");
+        GridPane.setValignment(resLB, VPos.CENTER);
+        GridPane.setHalignment(resLB, HPos.LEFT);
+        topGP.getChildren().add(resLB);
+
+        HBox discountPriceHB = new HBox(2);
+        GridPane.setColumnIndex(discountPriceHB, 1);
+        discountPriceHB.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHgrow(discountPriceHB, Priority.ALWAYS);
+        topGP.getChildren().add(discountPriceHB);
+
+        StringBuilder stringBuilder = new StringBuilder();
+        int count = 0;
+        for (int j = String.format("%d", Math.round(total * room.getRoomPrice() * countNightI)).length() - 1; j >= 0; j--) {
+            stringBuilder.append(String.format("%d", Math.round(total * room.getRoomPrice() * countNightI)).charAt(j));
+            count++;
+            if (count % 3 == 0 && i != 0) {
+                stringBuilder.append(' ');
+            }
+        }
+        String resultPrice = stringBuilder.reverse().toString();
+
+        Label actualMinPriceLB = new Label(resultPrice);
+        actualMinPriceLB.getStyleClass().add("room-small-price");
+        actualMinPriceLB.setStyle("-fx-text-fill: rgba(50, 50, 50); -fx-font-size: 21px;");
+
+        ImageView imageRuble = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/black-ruble.png"))));
+        imageRuble.setFitWidth(22);
+        imageRuble.setFitHeight(22);
+        imageRuble.setPreserveRatio(true);
+
+        discountPriceHB.getChildren().addAll(actualMinPriceLB, imageRuble);
+
+        String[] massStr = infoLB.getText().split(" · ");
+        Label infLb = new Label(massStr[1] + ", " + massStr[2]);
+        infLb.setStyle(infoLB.getStyle());
+        GridPane.setValignment(infLb, VPos.CENTER);
+        GridPane.setHalignment(infLb, HPos.LEFT);
+        GridPane.setRowIndex(infLb, 1);
+        topGP.getChildren().add(infLb);
+
+        HBox discountPriceHB2 = new HBox(2);
+        GridPane.setColumnIndex(discountPriceHB2, 1);
+        GridPane.setRowIndex(discountPriceHB2, 1);
+        discountPriceHB2.setAlignment(Pos.CENTER_RIGHT);
+        GridPane.setHgrow(discountPriceHB2, Priority.ALWAYS);
+        topGP.getChildren().add(discountPriceHB2);
+
+        Label actualMinPriceLB2 = new Label(resultPrice);
+        actualMinPriceLB2.getStyleClass().add("room-small-price");
+        actualMinPriceLB2.setStyle("-fx-text-fill: black; -fx-font-size: 16px; -fx-font-weight: normal;");
+
+        ImageView imageRuble2 = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/black-ruble.png"))));
+        imageRuble2.setFitWidth(16);
+        imageRuble2.setFitHeight(16);
+        imageRuble2.setPreserveRatio(true);
+
+        discountPriceHB2.getChildren().addAll(actualMinPriceLB2, imageRuble2);
+
+        HBox paymentHB = new HBox(10);
+        paymentHB.setStyle("-fx-background-color: rgba(245,245,245); -fx-background-radius: 30px;");
+        VBox.setMargin(paymentHB, new Insets(30, 0, 10, 0));
+        paymentHB.setPadding(new Insets(7, 15, 7, 15));
+        paymentHB.setAlignment(Pos.CENTER_LEFT);
+        rightVB.getChildren().add(paymentHB);
+
+        ImageView img = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/black-payment.png"))));
+        img.setFitWidth(28);
+        img.setFitHeight(28);
+        img.setPreserveRatio(true);
+        paymentHB.getChildren().add(img);
+
+        Label label = new Label("Оплата банковской картой");
+        label.setStyle("-fx-font-size: 15px;");
+        paymentHB.getChildren().add(label);
+
+        Button paymentBtn = new Button("Оплатить");
+        paymentBtn.setPrefWidth(310);
+        paymentBtn.getStyleClass().add("show-result-button");
+        paymentBtn.setOnAction(e -> {
+
+        });
+
+        rightVB.getChildren().add(paymentBtn);
+
+        HBox bottomHB = new HBox();
+        rightVB.getChildren().add(bottomHB);
+
+        CustomCheckButton customCheckButton = new CustomCheckButton("Я согласен с Единым регламентом сервиса Wildberries Travel и ознакомлен с Политикой обработки персональных данных", null);
+        customCheckButton.fire();
+        customCheckButton.addSecondAction(e -> {
+            paymentBtn.setDisable(!customCheckButton.isSelected());
+        });
+        bottomHB.getChildren().add(customCheckButton);
+
+        TextFlow textFlow = new TextFlow();
+        textFlow.setMaxHeight(50);
+        textFlow.setMinHeight(50);
+        textFlow.setPrefHeight(50);
+        customCheckButton.updateText(textFlow);
+
+        Text prefix = new Text("Я согласен с ");
+        prefix.getStyleClass().add("hint-label-registration-text");
+
+        Text ruleLink = new Text("Единым регламентом сервиса Travel");
+        ruleLink.getStyleClass().add("documents-button-text");
+        ruleLink.setUnderline(true);
+        ruleLink.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                HelpFullClass.openWebPage("https://zelmex.ru/");
+                e.consume();
+            }
+        });
+
+        ruleLink.setOnMouseReleased(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                e.consume();
+            }
+        });
+
+        Text middle = new Text(" и ознакомлен с ");
+        middle.getStyleClass().add("hint-label-registration-text");
+
+        Text policyLink = new Text("Политикой обработки персональных данных");
+        policyLink.getStyleClass().add("documents-button-text");
+        policyLink.setUnderline(true);
+        policyLink.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                HelpFullClass.openWebPage("https://zelmex.ru/");
+                e.consume();
+            }
+        });
+
+        policyLink.setOnMouseReleased(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                e.consume();
+            }
+        });
+
+        textFlow.getChildren().addAll(prefix, ruleLink, middle, policyLink);
     }
 
     private void createMap() {
@@ -772,9 +944,9 @@ public class CheckoutWindow extends ScrollPane {
     }
 
     private String countNight(LocalDate startDate, LocalDate endDate) {
-        int countNightI = 0;
+        countNightI = 0;
 
-        if(startDate.getYear() == endDate.getYear())
+        if (startDate.getYear() == endDate.getYear())
             countNightI = endDate.getDayOfYear() - startDate.getDayOfYear();
         else
             countNightI = startDate.lengthOfYear() - startDate.getDayOfYear() + endDate.getDayOfYear();
@@ -805,7 +977,7 @@ public class CheckoutWindow extends ScrollPane {
 
         gridPane.getColumnConstraints().addAll(col1, col2);
 
-        for(int i = 1; i <= 6; i ++)
+        for (int i = 1; i <= 6; i++)
             gridPane.getRowConstraints().add(new RowConstraints());
 
         HBox topLeftHB = new HBox(8);
@@ -823,7 +995,7 @@ public class CheckoutWindow extends ScrollPane {
         typeGuestLB.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
         topLeftHB.getChildren().add(typeGuestLB);
 
-        if(typeGuest.equals("Взрослый")) {
+        if (typeGuest.equals("Взрослый")) {
             VBox topVB = new VBox(3);
             topVB.getChildren().add(topLeftHB);
 
@@ -850,16 +1022,20 @@ public class CheckoutWindow extends ScrollPane {
         GridPane.setColumnIndex(throwOff, 1);
         GridPane.setHalignment(throwOff, HPos.RIGHT);
         throwOff.setOnAction(e -> {
-            for(Node node : ((Pane) throwOff.getUserData()).getChildren()) {
-                if(node instanceof Pane) {
+            for (Node node : ((Pane) throwOff.getUserData()).getChildren()) {
+                if (node instanceof Pane) {
                     for (Node childPane : ((Pane) node).getChildren()) {
-                        if(childPane instanceof Pane) {
+                        if (childPane instanceof Pane) {
                             for (Node childNode : ((Pane) childPane).getChildren()) {
                                 if (childNode instanceof TextField && ((TextField) childNode).isEditable()) {
                                     childNode.setStyle("");
                                     ((TextField) childNode).setText("");
+                                    if(childNode.getUserData() != null)
+                                        ((Label) childNode.getUserData()).setText("");
                                 } else if (childNode instanceof ComboBox<?>) {
                                     ((ComboBox<?>) childNode).setValue(null);
+                                    if(childNode.getUserData() != null)
+                                        ((Label) childNode.getUserData()).setText("");
                                 }
                             }
                         }
@@ -886,14 +1062,15 @@ public class CheckoutWindow extends ScrollPane {
         hintLB.setManaged(false);
 
         ComboBox<String> genderCB = new ComboBox<>();
+        genderCB.setUserData(hintLB);
         genderCB.setPromptText("Пол");
         genderCB.setEditable(true);
         genderCB.getEditor().setEditable(false);
         genderCB.getStyleClass().setAll("combo-box-guest-state");
         genderCB.prefWidthProperty().bind(firstNameTF.widthProperty());
         genderCB.getEditor().setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
-                if(genderCB.getValue() == null) {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (genderCB.getValue() == null) {
                     genderCB.getEditor().setText(genderCB.getPromptText());
                     genderCB.getEditor().setStyle("-fx-text-fill: rgba(180,180,180);");
                 }
@@ -921,13 +1098,12 @@ public class CheckoutWindow extends ScrollPane {
         inputControlVB.getChildren().add(genderCB);
 
         hintLB.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.isEmpty()) {
+            if (newV.isEmpty()) {
                 hintLB.setVisible(false);
                 hintLB.setManaged(false);
                 hintLB.setStyle("");
                 genderCB.setStyle("");
-            }
-            else {
+            } else {
                 hintLB.setVisible(true);
                 hintLB.setManaged(true);
                 hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
@@ -942,12 +1118,24 @@ public class CheckoutWindow extends ScrollPane {
 
         TextField passportTF = new TextField();
         setStateInputControl(0, 4, passportTF, "Серия и номер");
+        passportTF.setOnMouseEntered(e -> {
+            passportTF.setPromptText("__ _______");
+        });
+        passportTF.setOnMouseExited(e -> {
+            passportTF.setPromptText("Серия и номер");
+        });
 
         TextField nameTF = new TextField();
         setStateInputControl(1, 1, nameTF, "Имя");
 
         TextField birthdayTF = new TextField();
         setStateInputControl(1, 2, birthdayTF, "Дата рождения");
+        birthdayTF.setOnMouseEntered(e -> {
+            birthdayTF.setPromptText("__.__.____");
+        });
+        birthdayTF.setOnMouseExited(e -> {
+            birthdayTF.setPromptText("Дата рождения");
+        });
 
         TextField docTypeTF = new TextField();
         setStateInputControl(1, 3, docTypeTF, "Тип документа");
@@ -956,12 +1144,19 @@ public class CheckoutWindow extends ScrollPane {
 
         TextField validityPeriodTF = new TextField();
         setStateInputControl(1, 4, validityPeriodTF, "Срок действия");
+        validityPeriodTF.setOnMouseEntered(e -> {
+            validityPeriodTF.setPromptText("__.__.____");
+        });
+        validityPeriodTF.setOnMouseExited(e -> {
+            validityPeriodTF.setPromptText("Срок действия");
+        });
 
         return rootVB;
     }
 
     private void setStateInputControl(int col, int row, TextInputControl node, String promptText) {
         VBox inputControlVB = new VBox();
+        inputControlVB.setAlignment(Pos.BOTTOM_LEFT);
         GridPane.setRowIndex(inputControlVB, row);
         GridPane.setColumnIndex(inputControlVB, col);
         GridPane.setMargin(inputControlVB, new Insets(10));
@@ -971,13 +1166,12 @@ public class CheckoutWindow extends ScrollPane {
         VBox.setMargin(hintLB, new Insets(0, 0, 0, 5));
         hintLB.prefWidthProperty().bind(node.widthProperty());
         hintLB.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.isEmpty()) {
+            if (newV.isEmpty()) {
                 hintLB.setStyle("");
                 hintLB.setManaged(false);
                 hintLB.setVisible(false);
                 node.setStyle("");
-            }
-            else {
+            } else {
                 hintLB.setManaged(true);
                 hintLB.setVisible(true);
                 hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
@@ -992,10 +1186,11 @@ public class CheckoutWindow extends ScrollPane {
         node.setUserData(hintLB);
         node.getStyleClass().add("input-guest-state-control");
         node.textProperty().addListener((ob, oldV, newV) -> {
-            if(!newV.isEmpty())
+            if (!newV.isEmpty())
                 node.setStyle("-fx-text-fill: black;");
-            else
-                node.setStyle("");
+            else {
+                hintLB.setText("Поле обязательно для заполнения");
+            }
         });
         inputControlVB.getChildren().add(node);
 
@@ -1003,11 +1198,11 @@ public class CheckoutWindow extends ScrollPane {
     }
 
     private void updateBuyer() {
-        for(Map.Entry<VBox, CustomRadioButton> entry : radioButtonMap.entrySet()) {
+        for (Map.Entry<VBox, CustomRadioButton> entry : radioButtonMap.entrySet()) {
             VBox key = entry.getKey();
             key.getChildren().removeIf(node -> node instanceof HBox);
 
-            if(entry.getValue().getSelected()) {
+            if (entry.getValue().getSelected()) {
                 HBox bottomHB = new HBox(10);
                 bottomHB.setPadding(new Insets(25));
                 key.getChildren().add(bottomHB);
@@ -1038,13 +1233,12 @@ public class CheckoutWindow extends ScrollPane {
                 inputControlVB.getChildren().add(emailTF);
 
                 hintLB.textProperty().addListener((ob, oldV, newV) -> {
-                    if(newV.isEmpty()) {
+                    if (newV.isEmpty()) {
                         hintLB.setStyle("");
                         hintLB.setManaged(false);
                         hintLB.setVisible(false);
                         emailTF.setStyle("");
-                    }
-                    else {
+                    } else {
                         hintLB.setManaged(true);
                         hintLB.setVisible(true);
                         hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
@@ -1078,12 +1272,11 @@ public class CheckoutWindow extends ScrollPane {
                 inputControlVB2.getChildren().add(phoneTF);
 
                 hintLB2.textProperty().addListener((ob, oldV, newV) -> {
-                    if(newV.isEmpty()) {
+                    if (newV.isEmpty()) {
                         hintLB2.setManaged(false);
                         hintLB2.setStyle("");
                         phoneTF.setStyle("");
-                    }
-                    else {
+                    } else {
                         hintLB2.setManaged(true);
                         hintLB2.setVisible(true);
                         hintLB2.setStyle("-fx-text-fill: rgba(130,0,0);");
