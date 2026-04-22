@@ -4,6 +4,7 @@ package com.example.travel.controllers;
 import com.example.travel.models.Room;
 import com.example.travel.models.RoomFeature;
 import com.example.travel.services.RoomFeatureRelationService;
+import com.example.travel.util.DateMaskFormatter;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 import static com.example.travel.util.ImageUtils.round;
@@ -57,6 +57,13 @@ public class CheckoutWindow extends ScrollPane {
     private final Map<VBox, CustomRadioButton> radioButtonMap = new HashMap<>();
 
     private int countNightI = 1;
+
+    private enum InputControlContext {
+        FIRST_NAME_OR_NAME,
+        BIRTHDAY,
+        PASSPORT,
+        VALID_UNTIL
+    }
 
     public CheckoutWindow(Room room) {
         this.room = room;
@@ -1045,7 +1052,7 @@ public class CheckoutWindow extends ScrollPane {
         });
 
         TextField firstNameTF = new TextField();
-        setStateInputControl(0, 1, firstNameTF, "Фамилия");
+        setStateInputControl(0, 1, firstNameTF, "Фамилия", InputControlContext.FIRST_NAME_OR_NAME);
 
         VBox inputControlVB = new VBox();
         GridPane.setRowIndex(inputControlVB, 2);
@@ -1112,24 +1119,24 @@ public class CheckoutWindow extends ScrollPane {
         });
 
         TextField citizenshipTF = new TextField();
-        setStateInputControl(0, 3, citizenshipTF, "Гражданство");
+        setStateInputControl(0, 3, citizenshipTF, "Гражданство", InputControlContext.FIRST_NAME_OR_NAME);
         citizenshipTF.setText("Россия");
         citizenshipTF.setEditable(false);
 
         TextField passportTF = new TextField();
-        setStateInputControl(0, 4, passportTF, "Серия и номер");
+        setStateInputControl(0, 4, passportTF, "Серия и номер", InputControlContext.PASSPORT);
         passportTF.setOnMouseEntered(e -> {
-            passportTF.setPromptText("__ _______");
+            passportTF.setPromptText("____ ______");
         });
         passportTF.setOnMouseExited(e -> {
             passportTF.setPromptText("Серия и номер");
         });
 
         TextField nameTF = new TextField();
-        setStateInputControl(1, 1, nameTF, "Имя");
+        setStateInputControl(1, 1, nameTF, "Имя", InputControlContext.FIRST_NAME_OR_NAME);
 
         TextField birthdayTF = new TextField();
-        setStateInputControl(1, 2, birthdayTF, "Дата рождения");
+        setStateInputControl(1, 2, birthdayTF, "Дата рождения", InputControlContext.BIRTHDAY);
         birthdayTF.setOnMouseEntered(e -> {
             birthdayTF.setPromptText("__.__.____");
         });
@@ -1138,23 +1145,23 @@ public class CheckoutWindow extends ScrollPane {
         });
 
         TextField docTypeTF = new TextField();
-        setStateInputControl(1, 3, docTypeTF, "Тип документа");
+        setStateInputControl(1, 3, docTypeTF, "Тип документа", InputControlContext.FIRST_NAME_OR_NAME);
         docTypeTF.setText("Паспорт гражданина РФ");
         docTypeTF.setEditable(false);
 
         TextField validityPeriodTF = new TextField();
-        setStateInputControl(1, 4, validityPeriodTF, "Срок действия");
+        setStateInputControl(1, 4, validityPeriodTF, "Годен до...", InputControlContext.VALID_UNTIL);
         validityPeriodTF.setOnMouseEntered(e -> {
             validityPeriodTF.setPromptText("__.__.____");
         });
         validityPeriodTF.setOnMouseExited(e -> {
-            validityPeriodTF.setPromptText("Срок действия");
+            validityPeriodTF.setPromptText("Годен до...");
         });
 
         return rootVB;
     }
 
-    private void setStateInputControl(int col, int row, TextInputControl node, String promptText) {
+    private void setStateInputControl(int col, int row, TextInputControl node, String promptText, InputControlContext controlContext) {
         VBox inputControlVB = new VBox();
         inputControlVB.setAlignment(Pos.BOTTOM_LEFT);
         GridPane.setRowIndex(inputControlVB, row);
@@ -1192,6 +1199,12 @@ public class CheckoutWindow extends ScrollPane {
                 hintLB.setText("Поле обязательно для заполнения");
             }
         });
+
+        //"\\d{2}\\.\\d{2}\\.\\d{4}"
+
+        if (controlContext == InputControlContext.BIRTHDAY)
+            DateMaskFormatter.apply(node);
+
         inputControlVB.getChildren().add(node);
 
         gridPane.getChildren().add(inputControlVB);
