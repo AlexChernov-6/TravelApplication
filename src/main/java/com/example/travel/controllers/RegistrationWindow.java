@@ -45,11 +45,9 @@ public class RegistrationWindow extends AnchorPane {
     private static final String DOMAIN_NAME = "yandex|mail|gmail";
     private static final String END_EMAIL = "\\.[a-z]{2,3}";
 
-    private static final Pattern EMAIL_NAME_PATTERN = Pattern.compile("^" + EMAIL_NAME + "$");
-    private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile("^(" + DOMAIN_NAME + ")$");
-    private static final Pattern END_EMAIL_PATTERN = Pattern.compile("^" + END_EMAIL + "$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^" + EMAIL_NAME + "@(" + DOMAIN_NAME + ")" + END_EMAIL + "$");
+    protected static final Pattern EMAIL_NAME_PATTERN = Pattern.compile("^" + EMAIL_NAME + "$");
+    protected static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile("^(" + DOMAIN_NAME + ")$");
+    protected static final Pattern END_EMAIL_PATTERN = Pattern.compile("^" + END_EMAIL + "$");
 
     private Timer countdownTimer;
 

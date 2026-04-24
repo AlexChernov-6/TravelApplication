@@ -24,12 +24,11 @@ import javafx.scene.web.WebView;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
+import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
+import static com.example.travel.controllers.RegistrationWindow.*;
 import static com.example.travel.util.HelpFullClass.getRussianMonthName;
 import static com.example.travel.util.ImageUtils.round;
 
@@ -55,6 +54,8 @@ public class CheckoutWindow extends ScrollPane {
     private final CustomRadioParent customRadioParent = new CustomRadioParent();
 
     private final Map<VBox, CustomRadioButton> radioButtonMap = new HashMap<>();
+
+    private final List<Node> inputControls = new ArrayList<>();
 
     private int countNightI = 1;
 
@@ -431,7 +432,25 @@ public class CheckoutWindow extends ScrollPane {
         paymentBtn.setPrefWidth(310);
         paymentBtn.getStyleClass().add("show-result-button");
         paymentBtn.setOnAction(e -> {
-
+            for (Node node : inputControls) {
+                if(node instanceof ComboBox<?>) {
+                    if (((ComboBox<?>) node).getValue() == null || ((ComboBox<?>) node).getValue().equals("Пол"))
+                        ((Label) node.getUserData()).setText("Поле обязательно для заполнения");
+                } else if(node instanceof TextField) node.requestFocus();
+            }
+            label.requestFocus();
+            for(Node node : inputControls) {
+                if(node instanceof TextField && ((TextField) node).getText().contains("_")) {
+                    ((Label) node.getUserData()).setText("Укажите достоверные данные");
+                    ensureVisible(this, node);
+                    return;
+                }
+                if (((Label) node.getUserData()).isVisible()) {
+                    ensureVisible(this, node);
+                    return;
+                }
+            }
+            System.out.println("Все поля заполнены корректно");
         });
 
         rightVB.getChildren().add(paymentBtn);
@@ -1037,11 +1056,11 @@ public class CheckoutWindow extends ScrollPane {
                                 if (childNode instanceof TextField && ((TextField) childNode).isEditable()) {
                                     childNode.setStyle("");
                                     ((TextField) childNode).setText("");
-                                    if(childNode.getUserData() != null)
+                                    if (childNode.getUserData() != null)
                                         ((Label) childNode.getUserData()).setText("");
                                 } else if (childNode instanceof ComboBox<?>) {
                                     ((ComboBox<?>) childNode).setValue(null);
-                                    if(childNode.getUserData() != null)
+                                    if (childNode.getUserData() != null)
                                         ((Label) childNode.getUserData()).setText("");
                                 }
                             }
@@ -1053,6 +1072,7 @@ public class CheckoutWindow extends ScrollPane {
 
         TextField firstNameTF = new TextField();
         setStateInputControl(0, 1, firstNameTF, "Фамилия", InputControlContext.FIRST_NAME_OR_NAME);
+        inputControls.add(firstNameTF);
 
         VBox inputControlVB = new VBox();
         GridPane.setRowIndex(inputControlVB, 2);
@@ -1067,6 +1087,11 @@ public class CheckoutWindow extends ScrollPane {
         hintLB.prefWidthProperty().bind(firstNameTF.widthProperty());
         hintLB.setVisible(false);
         hintLB.setManaged(false);
+        inputControlVB.getChildren().add(hintLB);
+
+        VBox inputControlSecondVB = new VBox();
+        inputControlSecondVB.getStyleClass().add("input-guest-state-control");
+        inputControlVB.getChildren().add(inputControlSecondVB);
 
         ComboBox<String> genderCB = new ComboBox<>();
         genderCB.setUserData(hintLB);
@@ -1074,12 +1099,14 @@ public class CheckoutWindow extends ScrollPane {
         genderCB.setEditable(true);
         genderCB.getEditor().setEditable(false);
         genderCB.getStyleClass().setAll("combo-box-guest-state");
+        inputControls.add(genderCB);
         genderCB.prefWidthProperty().bind(firstNameTF.widthProperty());
         genderCB.getEditor().setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
                 if (genderCB.getValue() == null) {
                     genderCB.getEditor().setText(genderCB.getPromptText());
                     genderCB.getEditor().setStyle("-fx-text-fill: rgba(180,180,180);");
+                    hintLB.setText("Поле обязательно для заполнения");
                 }
 
                 if (genderCB.isShowing()) {
@@ -1091,18 +1118,22 @@ public class CheckoutWindow extends ScrollPane {
             }
         });
         genderCB.getItems().addAll("Мужской", "Женский");
+        Label lb = new Label(genderCB.getPromptText());
         genderCB.valueProperty().addListener((obs, old, val) -> {
-            if (val == null) {
+            if (val == null || val.equals("Пол")) {
                 genderCB.getEditor().setText(genderCB.getPromptText());
                 genderCB.getEditor().setStyle("-fx-text-fill: rgba(180,180,180);");
+                inputControlSecondVB.getChildren().remove(lb);
             } else {
+                inputControlSecondVB.getChildren().addFirst(lb);
                 genderCB.getEditor().setText(val);
                 genderCB.getEditor().setStyle("-fx-text-fill: black;");
+                hintLB.setText("");
             }
         });
         genderCB.setValue(null);
 
-        inputControlVB.getChildren().add(genderCB);
+        inputControlSecondVB.getChildren().add(genderCB);
 
         hintLB.textProperty().addListener((ob, oldV, newV) -> {
             if (newV.isEmpty()) {
@@ -1122,6 +1153,7 @@ public class CheckoutWindow extends ScrollPane {
         setStateInputControl(0, 3, citizenshipTF, "Гражданство", InputControlContext.FIRST_NAME_OR_NAME);
         citizenshipTF.setText("Россия");
         citizenshipTF.setEditable(false);
+        inputControls.add(citizenshipTF);
 
         TextField passportTF = new TextField();
         setStateInputControl(0, 4, passportTF, "Серия и номер", InputControlContext.PASSPORT);
@@ -1131,9 +1163,11 @@ public class CheckoutWindow extends ScrollPane {
         passportTF.setOnMouseExited(e -> {
             passportTF.setPromptText("Серия и номер");
         });
+        inputControls.add(passportTF);
 
         TextField nameTF = new TextField();
         setStateInputControl(1, 1, nameTF, "Имя", InputControlContext.FIRST_NAME_OR_NAME);
+        inputControls.add(nameTF);
 
         TextField birthdayTF = new TextField();
         setStateInputControl(1, 2, birthdayTF, "Дата рождения", InputControlContext.BIRTHDAY);
@@ -1143,11 +1177,13 @@ public class CheckoutWindow extends ScrollPane {
         birthdayTF.setOnMouseExited(e -> {
             birthdayTF.setPromptText("Дата рождения");
         });
+        inputControls.add(birthdayTF);
 
         TextField docTypeTF = new TextField();
         setStateInputControl(1, 3, docTypeTF, "Тип документа", InputControlContext.FIRST_NAME_OR_NAME);
         docTypeTF.setText("Паспорт гражданина РФ");
         docTypeTF.setEditable(false);
+        inputControls.add(docTypeTF);
 
         TextField validityPeriodTF = new TextField();
         setStateInputControl(1, 4, validityPeriodTF, "Годен до...", InputControlContext.VALID_UNTIL);
@@ -1157,6 +1193,7 @@ public class CheckoutWindow extends ScrollPane {
         validityPeriodTF.setOnMouseExited(e -> {
             validityPeriodTF.setPromptText("Годен до...");
         });
+        inputControls.add(validityPeriodTF);
 
         return rootVB;
     }
@@ -1172,16 +1209,14 @@ public class CheckoutWindow extends ScrollPane {
         hintLB.getStyleClass().add("hint-label-registration");
         VBox.setMargin(hintLB, new Insets(0, 0, 0, 5));
         hintLB.prefWidthProperty().bind(node.widthProperty());
+        hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
         hintLB.textProperty().addListener((ob, oldV, newV) -> {
             if (newV.isEmpty()) {
-                hintLB.setStyle("");
                 hintLB.setManaged(false);
                 hintLB.setVisible(false);
-                node.setStyle("");
             } else {
                 hintLB.setManaged(true);
                 hintLB.setVisible(true);
-                hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
                 node.setStyle("-fx-border-color: rgba(130,0,0);");
             }
         });
@@ -1192,16 +1227,8 @@ public class CheckoutWindow extends ScrollPane {
         node.setPromptText(promptText);
         node.setUserData(hintLB);
         node.getStyleClass().add("input-guest-state-control");
-        node.textProperty().addListener((ob, oldV, newV) -> {
-            //Провести валидацию
-            if (!newV.isEmpty()) {
-                node.setStyle("-fx-text-fill: black;");
-            } else {
-                hintLB.setText("Поле обязательно для заполнения");
-            }
-        });
 
-        if (controlContext == InputControlContext.FIRST_NAME_OR_NAME)
+        if (controlContext == InputControlContext.FIRST_NAME_OR_NAME) {
             node.setTextFormatter(new TextFormatter<>(change -> {
                 String oldText = change.getControlText();
                 String inputText = change.getText();
@@ -1213,23 +1240,22 @@ public class CheckoutWindow extends ScrollPane {
                             .toString();
 
                     if (filtered.isEmpty()) {
-                        if(inputText.length() == 1)
+                        if (inputText.length() == 1) {
                             hintLB.setText("Доступны только буквы русского алфавита");
+                        }
                         return null;
-                    }
-                    hintLB.setText("");
+                    } else hintLB.setText("");
                     change.setText(filtered);
                 }
 
                 if (change.isDeleted()) {
-                    return validateAndCapitalize(change, oldText, change.getControlNewText());
+                    return validateAndCapitalize(change, oldText, change.getControlNewText(), node);
                 }
 
                 String newTextFull = change.getControlNewText();
-                return validateAndCapitalize(change, oldText, newTextFull);
+                return validateAndCapitalize(change, oldText, newTextFull, node);
             }));
-
-        if (controlContext == InputControlContext.BIRTHDAY) {
+        } else if (controlContext == InputControlContext.BIRTHDAY) {
             InputControlMaskFormatter maskBirthday = new InputControlMaskFormatter();
             maskBirthday.apply(node, InputControlMaskFormatter.MaskContext.DATE_MASK);
         } else if (controlContext == InputControlContext.VALID_UNTIL) {
@@ -1268,29 +1294,36 @@ public class CheckoutWindow extends ScrollPane {
                 inputControlVB.getChildren().add(hintLB);
                 hintLB.setVisible(false);
                 hintLB.setManaged(false);
+                hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
 
                 TextField emailTF = new TextField();
+                emailTF.setUserData(hintLB);
                 emailTF.setPromptText("Email *");
                 emailTF.getStyleClass().add("input-guest-state-control");
+                inputControls.add(emailTF);
                 emailTF.prefWidthProperty().bind(inputControlVB.widthProperty());
                 emailTF.textProperty().addListener((ob, oldV, newV) -> {
-                    if (!newV.isEmpty())
-                        emailTF.setStyle("-fx-text-fill: black;");
-                    else
-                        emailTF.setStyle("");
+                    if (validateEmail(newV) != null) {
+                        hintLB.setText(validateEmail(newV));
+                    } else {
+                        hintLB.setText("");
+                    }
                 });
                 inputControlVB.getChildren().add(emailTF);
 
+                emailTF.focusedProperty().addListener((ob, oldV, newV) -> {
+                    if (emailTF.getText().isEmpty())
+                        hintLB.setText("Поле обязательно для заполнения");
+                });
+
                 hintLB.textProperty().addListener((ob, oldV, newV) -> {
                     if (newV.isEmpty()) {
-                        hintLB.setStyle("");
                         hintLB.setManaged(false);
                         hintLB.setVisible(false);
                         emailTF.setStyle("");
                     } else {
                         hintLB.setManaged(true);
                         hintLB.setVisible(true);
-                        hintLB.setStyle("-fx-text-fill: rgba(130,0,0);");
                         emailTF.setStyle("-fx-border-color: rgba(130,0,0);");
                     }
                 });
@@ -1307,17 +1340,14 @@ public class CheckoutWindow extends ScrollPane {
                 inputControlVB2.getChildren().add(hintLB2);
                 hintLB2.setVisible(false);
                 hintLB2.setManaged(false);
+                hintLB2.setStyle("-fx-text-fill: rgba(130,0,0);");
 
                 TextField phoneTF = new TextField();
+                phoneTF.setUserData(hintLB2);
                 phoneTF.setPromptText("Номер телефона");
                 phoneTF.getStyleClass().add("input-guest-state-control");
                 phoneTF.prefWidthProperty().bind(inputControlVB2.widthProperty());
-                phoneTF.textProperty().addListener((ob, oldV, newV) -> {
-                    if (!newV.isEmpty())
-                        phoneTF.setStyle("-fx-text-fill: black;");
-                    else
-                        phoneTF.setStyle("");
-                });
+                inputControls.add(phoneTF);
                 phoneTF.setOnMouseEntered(e -> {
                     phoneTF.setPromptText("+7(___)___-__-__");
                 });
@@ -1331,12 +1361,10 @@ public class CheckoutWindow extends ScrollPane {
                 hintLB2.textProperty().addListener((ob, oldV, newV) -> {
                     if (newV.isEmpty()) {
                         hintLB2.setManaged(false);
-                        hintLB2.setStyle("");
-                        phoneTF.setStyle("");
+                        hintLB2.setVisible(false);
                     } else {
                         hintLB2.setManaged(true);
                         hintLB2.setVisible(true);
-                        hintLB2.setStyle("-fx-text-fill: rgba(130,0,0);");
                         phoneTF.setStyle("-fx-border-color: rgba(130,0,0);");
                     }
                 });
@@ -1348,20 +1376,30 @@ public class CheckoutWindow extends ScrollPane {
         return Character.isLetter(c) && Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CYRILLIC || c == ' ' || c == '-';
     }
 
-    private static TextFormatter.Change validateAndCapitalize(TextFormatter.Change change, String oldText, String newTextFull) {
-        if (newTextFull.isEmpty())
+    private static TextFormatter.Change validateAndCapitalize(TextFormatter.Change change, String oldText
+            , String newTextFull, TextInputControl textInputControl) {
+        Label hintLB = ((Label) textInputControl.getUserData());
+
+        if (newTextFull.isEmpty()) {
+            if (change.getControl().isFocused())
+                hintLB.setText("Поле обязательно для заполнения");
             return change;
+        }
 
         char first = newTextFull.charAt(0);
 
-        if (first == ' ' || first == '-')
+        if (first == ' ' || first == '-') {
+            hintLB.setText("Строка не должна начинаться со спец. символа");
             return null;
+        }
 
         for (int i = 1; i < newTextFull.length(); i++) {
             char prev = newTextFull.charAt(i - 1);
             char curr = newTextFull.charAt(i);
-            if (isSpecial(prev) && isSpecial(curr))
+            if (isSpecial(prev) && isSpecial(curr)) {
+                hintLB.setText("Недопустимо два спец символа подряд");
                 return null;
+            }
         }
 
         String correctedText = capitalizeFirst(newTextFull);
@@ -1372,6 +1410,9 @@ public class CheckoutWindow extends ScrollPane {
             change.setCaretPosition(correctedText.length());
             change.setAnchor(correctedText.length());
         }
+
+        hintLB.setText("");
+        textInputControl.setStyle("");
         return change;
     }
 
@@ -1387,5 +1428,59 @@ public class CheckoutWindow extends ScrollPane {
             return Character.toUpperCase(first) + text.substring(1);
         }
         return text;
+    }
+
+    static String validateEmail(String email) {
+        //Проверяем что значение не пустое
+        if (email.isEmpty())
+            return "Поле обязательно для заполнения";
+
+        //Проверка на символ @
+        if (!email.contains("@"))
+            return "Адрес электронной почты должен содержать символ @";
+
+        //Проверка длинны электронного адреса
+        if (email.length() > 50)
+            return "Адрес электронной почты не может быть длиннее 50-ти символов.";
+
+        //Проверяем что мы имеем две части, как слева от @, так и справа
+        String[] parts = email.split("@", 2);
+        if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty())
+            return "Некорректный формат email";
+
+        //Создадим две переменные, для каждой из частей
+        String localPart = parts[0];
+        String domainPart = parts[1];
+
+        //Проверка локальной части
+        //Проверяем первый и последний символ в части имени email
+        if (!EMAIL_NAME_PATTERN.matcher(localPart).matches()) {
+            if (!Character.isLetterOrDigit(localPart.charAt(0)))
+                return "Email не должен начинаться со специального символа";
+
+            if (!Character.isLetterOrDigit(localPart.charAt(localPart.length() - 1)))
+                return "Email не должен заканчиваться специальным символом";
+
+            return "Email может содержать только англ. буквы, цифры и 1 спец. символ";
+        }
+
+        //Проверка доменной части
+        //Доменная часть обязательно должна содержать символ .
+        if (!domainPart.contains("."))
+            return "Домен должен содержать точку";
+
+        //Делим доменную часть левую(до символа .) и правую после неё, где указывается доменная зона(ru, com)
+        String domain = domainPart.substring(0, domainPart.indexOf('.'));
+        String zone = domainPart.substring(domainPart.indexOf('.') + 1);
+
+        //Проверяем что указан допустимый домен
+        if (!DOMAIN_NAME_PATTERN.matcher(domain).matches())
+            return "Допустимые домены: yandex, mail, gmail";
+
+        //Проверяем что доменная зона корректно указана
+        if (!END_EMAIL_PATTERN.matcher("." + zone).matches())
+            return "Доменная зона должна состоять из 2-3 маленьких латинских букв";
+
+        return null;
     }
 }

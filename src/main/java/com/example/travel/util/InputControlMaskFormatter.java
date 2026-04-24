@@ -1,8 +1,11 @@
 package com.example.travel.util;
 
-import javafx.scene.control.IndexRange;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextInputControl;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class InputControlMaskFormatter {
 
@@ -12,6 +15,7 @@ public class InputControlMaskFormatter {
     private static final String MASK_PHONE = "+7(___)___-__-__";
     private MaskContext context;
     private IndexRange oldRange;
+    private Label hintLB;
 
     public enum MaskContext {
         DATE_MASK,
@@ -21,6 +25,8 @@ public class InputControlMaskFormatter {
 
     public void apply(TextInputControl textField, MaskContext context) {
         this.context = context;
+        this.hintLB = ((Label) textField.getUserData());
+
         textField.setTextFormatter(new TextFormatter<>(change -> {
             String newTextControl = change.getControlNewText();
             String newText = change.getText();
@@ -49,6 +55,7 @@ public class InputControlMaskFormatter {
                     change.setCaretPosition(3);
                     change.setAnchor(3);
                 }
+                hintLB.setText("Поле обязательно для заполнения");
                 return change;
             }
 
@@ -70,6 +77,9 @@ public class InputControlMaskFormatter {
             }
 
             if (newText.isEmpty() && change.getControlNewText().length() < oldText.length()) {
+                change.getControl().setStyle("");
+                hintLB.setText("");
+
                 if (oldRange != null && oldRange.getLength() >= 1) {
                     StringBuilder stringBuilder = new StringBuilder(oldText);
                     for (int i = oldRange.getStart(); i < oldRange.getEnd(); i++) {
@@ -121,7 +131,10 @@ public class InputControlMaskFormatter {
                 digit.append(insStr.charAt(i));
         }
         String resultCasting = digit.toString();
-        if (resultCasting.isEmpty()) return null;
+        if (resultCasting.isEmpty()) {
+            hintLB.setText("Допускаются только цифры");
+            return null;
+        }
 
         int countPlaceholder = 0;
         for (int i = 0; i < oldText.length(); i++) {
@@ -129,7 +142,9 @@ public class InputControlMaskFormatter {
                 countPlaceholder++;
         }
 
-        if (countPlaceholder == 0) return null;
+        if (countPlaceholder == 0) {
+            return null;
+        }
 
         StringBuilder sb = new StringBuilder(oldText);
         int targetPos = -1;
@@ -149,9 +164,38 @@ public class InputControlMaskFormatter {
         change.setText(newText);
         change.setRange(0, oldText.length());
 
+        if(context == MaskContext.DATE_MASK && !change.getControlNewText().contains("_")) {
+            try {
+                boolean clearHint = true;
+                LocalDate insertDate = LocalDate.parse(change.getControlNewText(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                if(change.getControl() instanceof TextField) {
+                    if(((TextField) change.getControl()).getPromptText().equals("Дата рождения")) {
+                        if(insertDate.isAfter(LocalDate.now())) {
+                            hintLB.setText("Некорректная дата: кажется гость ещё не родился...");
+                            clearHint = false;
+                        }
+                        else if(insertDate.isBefore(LocalDate.now().minusYears(123))) {
+                            hintLB.setText("Некорректная дата: люди столько не живут...");
+                            clearHint = false;
+                        }
+                    } else {
+                        if(insertDate.isBefore(LocalDate.now())) {
+                            hintLB.setText("Некорректная дата: кажется ваш документ просрочен");
+                            clearHint = false;
+                        }
+                    }
+                }
+                if(clearHint)
+                    hintLB.setText("");
+            } catch (DateTimeException e) {
+                hintLB.setText("Некорректная дата");
+            }
+        } else hintLB.setText("");
+
         int newCaretPos = targetPos + 1;
         change.setCaretPosition(newCaretPos);
         change.setAnchor(newCaretPos);
+        change.getControl().setStyle("");
         return change;
     }
 
