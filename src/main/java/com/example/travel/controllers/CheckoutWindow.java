@@ -4,7 +4,7 @@ package com.example.travel.controllers;
 import com.example.travel.models.Room;
 import com.example.travel.models.RoomFeature;
 import com.example.travel.services.RoomFeatureRelationService;
-import com.example.travel.util.DateMaskFormatter;
+import com.example.travel.util.InputControlMaskFormatter;
 import com.example.travel.util.HelpFullClass;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -1193,17 +1193,53 @@ public class CheckoutWindow extends ScrollPane {
         node.setUserData(hintLB);
         node.getStyleClass().add("input-guest-state-control");
         node.textProperty().addListener((ob, oldV, newV) -> {
-            if (!newV.isEmpty())
+            //Провести валидацию
+            if (!newV.isEmpty()) {
                 node.setStyle("-fx-text-fill: black;");
-            else {
+            } else {
                 hintLB.setText("Поле обязательно для заполнения");
             }
         });
 
-        //"\\d{2}\\.\\d{2}\\.\\d{4}"
+        if (controlContext == InputControlContext.FIRST_NAME_OR_NAME)
+            node.setTextFormatter(new TextFormatter<>(change -> {
+                String oldText = change.getControlText();
+                String inputText = change.getText();
 
-        if (controlContext == InputControlContext.BIRTHDAY)
-            DateMaskFormatter.apply(node);
+                if (!inputText.isEmpty()) {
+                    String filtered = inputText.chars()
+                            .filter(c -> isAllowed((char) c))
+                            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                            .toString();
+
+                    if (filtered.isEmpty()) {
+                        if(inputText.length() == 1)
+                            hintLB.setText("Доступны только буквы русского алфавита");
+                        return null;
+                    }
+                    hintLB.setText("");
+                    change.setText(filtered);
+                }
+
+                if (change.isDeleted()) {
+                    return validateAndCapitalize(change, oldText, change.getControlNewText());
+                }
+
+                String newTextFull = change.getControlNewText();
+                return validateAndCapitalize(change, oldText, newTextFull);
+            }));
+
+        if (controlContext == InputControlContext.BIRTHDAY) {
+            InputControlMaskFormatter maskBirthday = new InputControlMaskFormatter();
+            maskBirthday.apply(node, InputControlMaskFormatter.MaskContext.DATE_MASK);
+        } else if (controlContext == InputControlContext.VALID_UNTIL) {
+            InputControlMaskFormatter maskValidUtil = new InputControlMaskFormatter();
+            maskValidUtil.apply(node, InputControlMaskFormatter.MaskContext.DATE_MASK);
+        } else if (controlContext == InputControlContext.PASSPORT) {
+            InputControlMaskFormatter maskValidUtil = new InputControlMaskFormatter();
+            maskValidUtil.apply(node, InputControlMaskFormatter.MaskContext.PASSPORT_MASK);
+        }
+
 
         inputControlVB.getChildren().add(node);
 
@@ -1282,6 +1318,14 @@ public class CheckoutWindow extends ScrollPane {
                     else
                         phoneTF.setStyle("");
                 });
+                phoneTF.setOnMouseEntered(e -> {
+                    phoneTF.setPromptText("+7(___)___-__-__");
+                });
+                phoneTF.setOnMouseExited(e -> {
+                    phoneTF.setPromptText("Номер телефона");
+                });
+                InputControlMaskFormatter inputControlMaskFormatter = new InputControlMaskFormatter();
+                inputControlMaskFormatter.apply(phoneTF, InputControlMaskFormatter.MaskContext.PHONE_MASK);
                 inputControlVB2.getChildren().add(phoneTF);
 
                 hintLB2.textProperty().addListener((ob, oldV, newV) -> {
@@ -1298,5 +1342,50 @@ public class CheckoutWindow extends ScrollPane {
                 });
             }
         }
+    }
+
+    private static boolean isAllowed(char c) {
+        return Character.isLetter(c) && Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CYRILLIC || c == ' ' || c == '-';
+    }
+
+    private static TextFormatter.Change validateAndCapitalize(TextFormatter.Change change, String oldText, String newTextFull) {
+        if (newTextFull.isEmpty())
+            return change;
+
+        char first = newTextFull.charAt(0);
+
+        if (first == ' ' || first == '-')
+            return null;
+
+        for (int i = 1; i < newTextFull.length(); i++) {
+            char prev = newTextFull.charAt(i - 1);
+            char curr = newTextFull.charAt(i);
+            if (isSpecial(prev) && isSpecial(curr))
+                return null;
+        }
+
+        String correctedText = capitalizeFirst(newTextFull);
+
+        if (!correctedText.equals(newTextFull)) {
+            change.setText(correctedText);
+            change.setRange(0, oldText.length());
+            change.setCaretPosition(correctedText.length());
+            change.setAnchor(correctedText.length());
+        }
+        return change;
+    }
+
+    private static boolean isSpecial(char c) {
+        return c == ' ' || c == '-';
+    }
+
+    private static String capitalizeFirst(String text) {
+        if (text == null || text.isEmpty()) return text;
+        char first = text.charAt(0);
+        if (Character.UnicodeBlock.of(first) == Character.UnicodeBlock.CYRILLIC
+                && Character.isLowerCase(first)) {
+            return Character.toUpperCase(first) + text.substring(1);
+        }
+        return text;
     }
 }
