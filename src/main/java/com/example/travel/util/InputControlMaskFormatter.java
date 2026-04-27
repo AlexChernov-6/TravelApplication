@@ -2,6 +2,7 @@ package com.example.travel.util;
 
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ public class InputControlMaskFormatter {
     private MaskContext context;
     private IndexRange oldRange;
     private Label hintLB;
+    private String nodePromptText;
 
     public enum MaskContext {
         DATE_MASK,
@@ -26,6 +28,7 @@ public class InputControlMaskFormatter {
     public void apply(TextInputControl textField, MaskContext context) {
         this.context = context;
         this.hintLB = ((Label) textField.getUserData());
+        this.nodePromptText = textField.getPromptText();
 
         textField.setTextFormatter(new TextFormatter<>(change -> {
             String newTextControl = change.getControlNewText();
@@ -169,7 +172,7 @@ public class InputControlMaskFormatter {
                 boolean clearHint = true;
                 LocalDate insertDate = LocalDate.parse(change.getControlNewText(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
                 if(change.getControl() instanceof TextField) {
-                    if(((TextField) change.getControl()).getPromptText().equals("Дата рождения")) {
+                    if(nodePromptText.equals("Дата рождения")) {
                         if(insertDate.isAfter(LocalDate.now())) {
                             hintLB.setText("Некорректная дата: кажется гость ещё не родился...");
                             clearHint = false;
@@ -195,7 +198,6 @@ public class InputControlMaskFormatter {
         int newCaretPos = targetPos + 1;
         change.setCaretPosition(newCaretPos);
         change.setAnchor(newCaretPos);
-        change.getControl().setStyle("");
         return change;
     }
 

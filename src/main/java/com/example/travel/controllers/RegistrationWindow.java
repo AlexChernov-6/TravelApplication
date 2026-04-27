@@ -68,7 +68,7 @@ public class RegistrationWindow extends AnchorPane {
 
     private AnchorPane welcomeAP;
 
-    private ConfigManager configManager = new ConfigManager();
+    public static ConfigManager CONFIG_MANAGER = new ConfigManager();
 
     private ObjectProperty<Boolean> isEmpty = new SimpleObjectProperty<>();
 
@@ -475,8 +475,8 @@ public class RegistrationWindow extends AnchorPane {
                             User newUser = new User();
                             newUser.setUserEmail(boldEmail.getText());
                             userService.saveRow(newUser);
-                            configManager.setUserId(newUser.getUserID());
-                            configManager.save();
+                            CONFIG_MANAGER.setUserId(newUser.getUserID());
+                            CONFIG_MANAGER.save();
 
                             if(addPersonalInformation == null)
                                 fillInPersonalInformation();
@@ -496,8 +496,8 @@ public class RegistrationWindow extends AnchorPane {
 
                             System.out.println("Новый пользователь создан с email: " + boldEmail.getText());
                         } else {
-                            configManager.setUserId(existingUser.getUserID());
-                            configManager.save();
+                            CONFIG_MANAGER.setUserId(existingUser.getUserID());
+                            CONFIG_MANAGER.save();
 
                             creatingAWelcomeWindow();
 
@@ -753,7 +753,7 @@ public class RegistrationWindow extends AnchorPane {
         saveNewState.getStyleClass().add("show-result-button");
         saveNewState.setOnAction(e -> {
             UserService userService = new UserService();
-            User updatebleUser = userService.getRowById(configManager.getUserId());
+            User updatebleUser = userService.getRowById(CONFIG_MANAGER.getUserId());
 
             String newName = ((TextField) nameTF.getChildren().stream().filter(child -> child instanceof TextField)
                     .toList().getFirst()).getText();

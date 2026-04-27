@@ -17,8 +17,10 @@ module com.example.travel {
     requires javafx.web;
     requires jdk.httpserver;
     requires jdk.jsobject;
+    requires java.net.http;
+    requires com.google.gson;
 
-    opens com.example.travel to javafx.fxml, javafx.graphics;
+    opens com.example.travel to javafx.fxml, javafx.graphics, com.google.gson;
     exports com.example.travel.controllers;
     opens com.example.travel.controllers to javafx.fxml;
     exports com.example.travel.util;

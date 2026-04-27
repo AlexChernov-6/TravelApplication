@@ -24,10 +24,12 @@ public class Order {
     private LocalDate dateEnd;
     @Column(name = "order_cost")
     private double orderCost;
+    @Column(name = "is_paid")
+    private boolean isPaid;
 
     public Order() {}
 
-    public Order(long orderID, User user, LocalDateTime orderDate, Room room, LocalDate dateStart, LocalDate dateEnd, double orderCost) {
+    public Order(long orderID, User user, LocalDateTime orderDate, Room room, LocalDate dateStart, LocalDate dateEnd, double orderCost, boolean isPaid) {
         this.orderID = orderID;
         this.user = user;
         this.orderDate = orderDate;
@@ -35,6 +37,7 @@ public class Order {
         this.dateStart = dateStart;
         this.dateEnd = dateEnd;
         this.orderCost = orderCost;
+        this.isPaid = isPaid;
     }
 
     public long getOrderID() {
@@ -91,5 +94,13 @@ public class Order {
 
     public void setOrderCost(double orderCost) {
         this.orderCost = orderCost;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean paid) {
+        isPaid = paid;
     }
 }
