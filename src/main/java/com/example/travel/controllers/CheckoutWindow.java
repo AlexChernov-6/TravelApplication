@@ -17,6 +17,7 @@ import com.google.gson.JsonParser;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Worker;
 import javafx.geometry.*;
 import javafx.scene.Node;
@@ -46,6 +47,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static com.example.travel.controllers.FilterWindow.ensureVisible;
 import static com.example.travel.controllers.HotelCell.*;
@@ -88,6 +93,17 @@ public class CheckoutWindow extends ScrollPane {
 
     private String buyerEmail, buyerPhone;
 
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private double orderCost;
+
+    private ScheduledExecutorService sheduler;
+
+    private Map<Node, String> passpertDataMap = new HashMap<>();
+
+    private ScheduledFuture<?> resetPaymentTask;
+    private ChangeListener<Worker.State> loadListener;
+
     private enum InputControlContext {
         FIRST_NAME_OR_NAME,
         BIRTHDAY,
@@ -98,6 +114,7 @@ public class CheckoutWindow extends ScrollPane {
     public CheckoutWindow(Room room) {
         this.room = room;
         StackPane overSP = PopularDestinationsController.getOverlaySP();
+        sheduler = Executors.newSingleThreadScheduledExecutor();
 
         VBox parentVB = new VBox();
         parentVB.setStyle("-fx-background-color: rgba(230, 230, 230);");
@@ -150,8 +167,6 @@ public class CheckoutWindow extends ScrollPane {
 
         infoLB = new Label();
         infoLB.setStyle("-fx-font-size: 16px; -fx-text-fill: rgba(180, 180, 180);");
-        LocalDate startDate;
-        LocalDate endDate;
         if (CustomCalendar.getStartSelectedBtn() != null && CustomCalendar.getEndSelectedBtn() != null) {
             startDate = (LocalDate) CustomCalendar.getStartSelectedBtn().getUserData();
             endDate = (LocalDate) CustomCalendar.getEndSelectedBtn().getUserData();
@@ -391,7 +406,7 @@ public class CheckoutWindow extends ScrollPane {
 
         StringBuilder stringBuilder = new StringBuilder();
         int count = 0;
-        double orderCost = total * room.getRoomPrice() * countNightI;
+        orderCost = total * room.getRoomPrice() * countNightI;
         for (int j = String.format("%d", Math.round(orderCost)).length() - 1; j >= 0; j--) {
             stringBuilder.append(String.format("%d", Math.round(orderCost)).charAt(j));
             count++;
@@ -482,26 +497,6 @@ public class CheckoutWindow extends ScrollPane {
             }
 
             if (CONFIG_MANAGER.getUserId() != 0) {
-                order = new Order();
-                order.setUser(new UserService().getRowById(CONFIG_MANAGER.getUserId()));
-                order.setOrderDate(LocalDateTime.now());
-                order.setRoom(room);
-                order.setDateStart(startDate);
-                order.setDateEnd(endDate);
-                order.setOrderCost(orderCost);
-                order.setPaid(false);
-                new OrderService().saveRow(order);
-
-                GuestService service = new GuestService();
-                for (Guest guest : guests) {
-                    guest.setOrder(order);
-                    if(guest.isBuyerBoolean()) {
-                        guest.setBuyerEmail(buyerEmail);
-                        guest.setBuyerPhone(buyerPhone);
-                    }
-                    service.saveRow(guest);
-                }
-
                 if (paymentWebView == null)
                     createPaymentWin();
                 showPaymentWin(orderCost, "Путёвка в отель \"" + room.getHotel().getHotelName() + "\"");
@@ -1366,6 +1361,15 @@ public class CheckoutWindow extends ScrollPane {
                 lb.setVisible(false);
                 lb.setManaged(false);
             }
+            if (promptText != null && promptText.equals("Серия и номер")) {
+                if (!val.isEmpty() && !val.contains("_")) {
+                    if (passpertDataMap.containsValue(val)) {
+                        hintLB.setText("Гость с таким паспортом в этом заказе уже существует");
+                    } else {
+                        passpertDataMap.put(node, val);
+                    }
+                } else passpertDataMap.put(node, val);
+            }
         });
 
 
@@ -1727,7 +1731,6 @@ public class CheckoutWindow extends ScrollPane {
         paymentWebView = new WebView();
         paymentWebView.setVisible(false);
         paymentWebView.setUserData("paymentWebView");
-        paymentWebView.setStyle("-fx-background-color: transparent;");
 
         double startWidthWebView = overSP.getWidth() * 0.7;
         double startHeightWebView = overSP.getHeight();
@@ -1762,6 +1765,49 @@ public class CheckoutWindow extends ScrollPane {
             else hidePaymentWin(false);
         });
 
+        WebEngine engine = paymentWebView.getEngine();
+        engine.setJavaScriptEnabled(true);
+
+        engine.locationProperty().addListener((obs, oldUrl, newUrl) -> {
+            if (newUrl != null && newUrl.startsWith("https://yoomoney.ru")) {
+                engineIsEmpty = false;
+
+                order.setPaid(true);
+                new OrderService().updateRow(order);
+
+                GuestService service = new GuestService();
+                for (Guest guest : guests) {
+                    if (guest.isBuyerBoolean()) {
+                        guest.setBuyerEmail(buyerEmail);
+                        guest.setBuyerPhone(buyerPhone);
+                    }
+                    service.updateRow(guest);
+                }
+
+                hidePaymentWin(true);
+                // Здесь разблокируйте контент
+                AnchorPane successfulPaymentWindow = createSuccessfulPaymentWindow();
+                successfulPaymentWindow.setManaged(true);
+
+                FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.millis(600), successfulPaymentWindow);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+                fadeIn.setOnFinished(eventIn -> {
+                    PauseTransition hideTimer = new PauseTransition(javafx.util.Duration.seconds(3));
+                    hideTimer.playFromStart();
+                    hideTimer.setOnFinished(eventTimer -> {
+                        FadeTransition fadeOut = new FadeTransition(javafx.util.Duration.millis(200), successfulPaymentWindow);
+                        fadeOut.setToValue(0.0);
+                        fadeOut.setOnFinished(event -> {
+                            shadowPane.setVisible(false);
+                            PopularDestinationsController.getOverlaySP().getChildren().remove(successfulPaymentWindow);
+                        });
+                        fadeOut.play();
+                    });
+                });
+            }
+        });
+
         overSP.getChildren().add(paymentWebView);
     }
 
@@ -1770,74 +1816,88 @@ public class CheckoutWindow extends ScrollPane {
         closeBtnPayment.setVisible(true);
         paymentWebView.setVisible(true);
 
-        if(engineIsEmpty) {
-            new Thread(() -> {
-                try {
-                    String token = getConfirmationToken(amount, description);
-                    String filledHtml = loadHtmlTemplate();
+        if (engineIsEmpty) {
+            if (resetPaymentTask != null && !resetPaymentTask.isDone()) {
+                resetPaymentTask.cancel(false);
+            }
 
-                    Platform.runLater(() -> {
-                        WebEngine engine = paymentWebView.getEngine();
-                        engine.setJavaScriptEnabled(true);
+            if (order == null) {
+                createOrderAndGuests();
+            }
 
-                        engine.locationProperty().addListener((obs, oldUrl, newUrl) -> {
-                            if (newUrl != null && newUrl.startsWith("https://yoomoney.ru")) {
-                                order.setPaid(true);
-                                new OrderService().updateRow(order);
+            reloadPaymentContent(amount, description);
+        }
+    }
 
-                                hidePaymentWin(true);
-                                // Здесь разблокируйте контент
-                                AnchorPane successfulPaymentWindow = createSuccessfulPaymentWindow();
-                                successfulPaymentWindow.setManaged(true);
+    private void reloadPaymentContent(double amount, String description) {
+        new Thread(() -> {
+            try {
+                String token = getConfirmationToken(amount, description);
+                String filledHtml = loadHtmlTemplate();
 
-                                FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.millis(600), successfulPaymentWindow);
-                                fadeIn.setToValue(1.0);
-                                fadeIn.play();
-                                fadeIn.setOnFinished(eventIn -> {
-                                    PauseTransition hideTimer = new PauseTransition(javafx.util.Duration.seconds(3));
-                                    hideTimer.playFromStart();
-                                    hideTimer.setOnFinished(eventTimer -> {
-                                        FadeTransition fadeOut = new FadeTransition(javafx.util.Duration.millis(200), successfulPaymentWindow);
-                                        fadeOut.setToValue(0.0);
-                                        fadeOut.setOnFinished(event -> {
-                                            shadowPane.setVisible(false);
-                                            PopularDestinationsController.getOverlaySP().getChildren().remove(successfulPaymentWindow);
-                                        });
-                                        fadeOut.play();
-                                    });
+                Platform.runLater(() -> {
+                    WebEngine engine = paymentWebView.getEngine();
+                    if (loadListener != null) {
+                        engine.getLoadWorker().stateProperty().removeListener(loadListener);
+                    }
+                    loadListener = (obs, oldState, newState) -> {
+                        if (newState == Worker.State.SUCCEEDED) {
+                            String initScript = String.format(
+                                    "function waitForWidget() {" +
+                                            "  if (typeof YooMoneyCheckoutWidget !== 'undefined') {" +
+                                            "    var checkout = new YooMoneyCheckoutWidget({" +
+                                            "      confirmation_token: '%s'," +
+                                            "      return_url: 'https://yoomoney.ru'," +
+                                            "      error_callback: function(error) { console.error(error); }" +
+                                            "    });" +
+                                            "    checkout.render('payment-form');" +
+                                            "    clearInterval(intervalId);" +
+                                            "  }" +
+                                            "}" +
+                                            "var intervalId = setInterval(waitForWidget, 100);", token);
+                            engineIsEmpty = false;
+
+                            resetPaymentTask = sheduler.schedule(() -> {
+                                Platform.runLater(() -> {
+                                    if (paymentWebView != null && paymentWebView.isVisible()) {
+                                        hidePaymentWin(false);
+                                    }
+                                    engineIsEmpty = true;
                                 });
-                            }
-                        });
+                            }, 10, TimeUnit.MINUTES);
 
-                        String initScript =
-                                "function waitForWidget() {" +
-                                        "    if (typeof YooMoneyCheckoutWidget !== 'undefined') {" +
-                                        "        var checkout = new YooMoneyCheckoutWidget({" +
-                                        "            confirmation_token: '" + token + "'," +
-                                        "            return_url: 'https://yoomoney.ru'," +
-                                        "            error_callback: function(error) { console.error('Widget error:', error); }," +
-                                        /*"            complete_callback: function() { javaApp.onPaymentComplete(); }" +*/
-                                        "        });" +
-                                        "        checkout.render('payment-form');" +
-                                        "        clearInterval(intervalId);" +
-                                        "    }" +
-                                        "}" +
-                                        "var intervalId = setInterval(waitForWidget, 100);";
+                            engine.executeScript(initScript);
+                        }
+                    };
+                    engine.getLoadWorker().stateProperty().addListener(loadListener);
+                    engine.loadContent(filledHtml);
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> hidePaymentWin(false));
+            }
+        }).start();
+    }
 
-                        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-                            if (newState == Worker.State.SUCCEEDED) {
-                                engine.executeScript(initScript);
-                                engineIsEmpty = false;
-                            }
-                        });
+    private void createOrderAndGuests() {
+        order = new Order();
+        order.setUser(new UserService().getRowById(CONFIG_MANAGER.getUserId()));
+        order.setOrderDate(LocalDateTime.now());
+        order.setRoom(room);
+        order.setDateStart(startDate);
+        order.setDateEnd(endDate);
+        order.setOrderCost(orderCost);
+        order.setPaid(false);
+        new OrderService().saveRow(order);
 
-                        engine.loadContent(filledHtml);
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Platform.runLater(() -> hidePaymentWin(false));
-                }
-            }).start();
+        GuestService service = new GuestService();
+        for (Guest guest : guests) {
+            guest.setOrder(order);
+            if (guest.isBuyerBoolean()) {
+                guest.setBuyerEmail(buyerEmail);
+                guest.setBuyerPhone(buyerPhone);
+            }
+            service.saveRow(guest);
         }
     }
 
