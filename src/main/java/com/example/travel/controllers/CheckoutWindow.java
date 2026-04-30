@@ -1,10 +1,7 @@
 package com.example.travel.controllers;
 
 
-import com.example.travel.models.Guest;
-import com.example.travel.models.Order;
-import com.example.travel.models.Room;
-import com.example.travel.models.RoomFeature;
+import com.example.travel.models.*;
 import com.example.travel.services.GuestService;
 import com.example.travel.services.OrderService;
 import com.example.travel.services.RoomFeatureRelationService;
@@ -104,6 +101,8 @@ public class CheckoutWindow extends ScrollPane {
     private ScheduledFuture<?> resetPaymentTask;
     private ChangeListener<Worker.State> loadListener;
 
+    private String enteredEmail, enteredPhone;
+
     private enum InputControlContext {
         FIRST_NAME_OR_NAME,
         BIRTHDAY,
@@ -125,8 +124,8 @@ public class CheckoutWindow extends ScrollPane {
 
         setContent(parentVB);
         setFitToWidth(true);
-        setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        setHbarPolicy(ScrollBarPolicy.NEVER);
         getStyleClass().add("scroll-pane");
         //new HelpFullClass().scrollPaneAnimation(this);
 
@@ -697,8 +696,8 @@ public class CheckoutWindow extends ScrollPane {
         infoRoomScrollPane.maxHeightProperty().bind(overSP.heightProperty().subtract(70));
         StackPane.setAlignment(infoRoomScrollPane, Pos.BOTTOM_CENTER);
         infoRoomScrollPane.setFitToWidth(true);
-        infoRoomScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        infoRoomScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        infoRoomScrollPane.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        infoRoomScrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
         infoRoomScrollPane.getStyleClass().addAll("scroll-pane", "scroll-pane-transparent");
         Platform.runLater(() -> {
             new HelpFullClass().scrollPaneAnimation(infoRoomScrollPane);
@@ -1086,14 +1085,14 @@ public class CheckoutWindow extends ScrollPane {
             btn.setTextBtn("Является покупателем");
             btn.addStyleButtonText("bold-text");
             btn.addSecondAction(e -> {
-                for(Guest guest1 : guests)
+                for (Guest guest1 : guests)
                     guest1.setBuyerBoolean(false);
 
                 guest.setBuyerBoolean(true);
                 updateBuyer();
             });
 
-            if(countGuest == 1)
+            if (countGuest == 1)
                 guest.setBuyerBoolean(true);
 
             radioButtonMap.put(rootVB, btn);
@@ -1424,6 +1423,10 @@ public class CheckoutWindow extends ScrollPane {
             key.getChildren().removeIf(node -> node.getUserData() != null && node.getUserData().equals("bottomHB"));
 
             if (entry.getValue().getSelected()) {
+                User currUser = null;
+                if (CONFIG_MANAGER.getUserId() != 0) {
+                    currUser = new UserService().getRowById(CONFIG_MANAGER.getUserId());
+                }
                 HBox bottomHB = new HBox(10);
                 bottomHB.setUserData("bottomHB");
                 bottomHB.setPadding(new Insets(25));
@@ -1448,6 +1451,10 @@ public class CheckoutWindow extends ScrollPane {
                 hintLB1.setStyle("-fx-text-fill: rgba(130,0,0);");
 
                 TextField emailTF = new TextField();
+                if (enteredEmail == null || enteredEmail.isEmpty()) {
+                    if (currUser != null && (currUser.getUserEmail() != null || !currUser.getUserEmail().isEmpty()))
+                        emailTF.setText(currUser.getUserEmail());
+                } else emailTF.setText(enteredEmail);
                 emailTF.setPromptText("Email *");
                 emailTF.getStyleClass().add("style-input-control");
                 emailTF.setUserData(hintLB1);
@@ -1469,6 +1476,8 @@ public class CheckoutWindow extends ScrollPane {
                     if (val) {
                         lb1.setVisible(true);
                         lb1.setManaged(true);
+                        if (hintLB1.getText().isEmpty())
+                            hintLB1.setText(validateEmail(emailTF.getText()));
                     } else {
                         if (emailTF.getText() == null || emailTF.getText().isEmpty()) {
                             lb1.setVisible(false);
@@ -1489,11 +1498,12 @@ public class CheckoutWindow extends ScrollPane {
                         lb1.setManaged(false);
                     }
                     buyerEmail = newV;
+                    enteredEmail = newV;
                 });
                 inputControlSecondVB1.getChildren().add(emailTF);
 
                 hintLB1.textProperty().addListener((ob, oldV, newV) -> {
-                    if (newV.isEmpty()) {
+                    if (newV == null || newV.isEmpty()) {
                         hintLB1.setManaged(false);
                         hintLB1.setVisible(false);
                         inputControlSecondVB1.setStyle("");
@@ -1523,6 +1533,7 @@ public class CheckoutWindow extends ScrollPane {
                 hintLB2.setStyle("-fx-text-fill: rgba(130,0,0);");
 
                 TextField phoneTF = new TextField();
+                if (enteredPhone != null && !enteredPhone.isEmpty()) phoneTF.setText(enteredPhone);
                 phoneTF.setUserData(hintLB2);
                 phoneTF.setPromptText("Номер телефона");
                 phoneTF.getStyleClass().add("style-input-control");
@@ -1550,6 +1561,8 @@ public class CheckoutWindow extends ScrollPane {
                     if (val) {
                         lb2.setVisible(true);
                         lb2.setManaged(true);
+                        if(!phoneTF.getText().matches("^\\+7([0-9]{3})[0-9]{3}-[0-9]{2}-[0-9]{2}$") && hintLB2.getText().isEmpty())
+                            hintLB2.setText("Некорректный номер телефона");
                     } else {
                         if (phoneTF.getText() == null || phoneTF.getText().isEmpty()) {
                             lb2.setVisible(false);
@@ -1564,6 +1577,7 @@ public class CheckoutWindow extends ScrollPane {
                         lb2.setManaged(false);
                     }
                     buyerPhone = newV;
+                    enteredPhone = newV;
                 });
 
                 InputControlMaskFormatter inputControlMaskFormatter = new InputControlMaskFormatter();
@@ -1770,24 +1784,19 @@ public class CheckoutWindow extends ScrollPane {
 
         engine.locationProperty().addListener((obs, oldUrl, newUrl) -> {
             if (newUrl != null && newUrl.startsWith("https://yoomoney.ru")) {
-                engineIsEmpty = false;
+                engineIsEmpty = true;
 
                 order.setPaid(true);
                 new OrderService().updateRow(order);
 
-                GuestService service = new GuestService();
-                for (Guest guest : guests) {
-                    if (guest.isBuyerBoolean()) {
-                        guest.setBuyerEmail(buyerEmail);
-                        guest.setBuyerPhone(buyerPhone);
-                    }
-                    service.updateRow(guest);
-                }
+                order = null;
 
+                resetPaymentWebView();
                 hidePaymentWin(true);
                 // Здесь разблокируйте контент
                 AnchorPane successfulPaymentWindow = createSuccessfulPaymentWindow();
                 successfulPaymentWindow.setManaged(true);
+                successfulPaymentWindow.setPadding(new Insets(20));
 
                 FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.millis(600), successfulPaymentWindow);
                 fadeIn.setToValue(1.0);
@@ -1892,12 +1901,21 @@ public class CheckoutWindow extends ScrollPane {
 
         GuestService service = new GuestService();
         for (Guest guest : guests) {
-            guest.setOrder(order);
-            if (guest.isBuyerBoolean()) {
-                guest.setBuyerEmail(buyerEmail);
-                guest.setBuyerPhone(buyerPhone);
+            Guest saveGuest = new Guest();
+            saveGuest.setOrder(order);
+            saveGuest.setGuestFirstName(guest.getGuestFirstName());
+            saveGuest.setGuestName(guest.getGuestName());
+            saveGuest.setGuestGender(guest.getGuestGender());
+            saveGuest.setGuestBirthday(guest.getGuestBirthday());
+            saveGuest.setGuestCitizenship(guest.getGuestCitizenship());
+            saveGuest.setGuestTypeDocument(guest.getGuestTypeDocument());
+            saveGuest.setGuestPassport(guest.getGuestPassport());
+            saveGuest.setBuyerBoolean(guest.isBuyerBoolean());
+            if (saveGuest.isBuyerBoolean()) {
+                saveGuest.setBuyerEmail(buyerEmail);
+                saveGuest.setBuyerPhone(buyerPhone);
             }
-            service.saveRow(guest);
+            service.saveRow(saveGuest);
         }
     }
 
@@ -1987,5 +2005,22 @@ public class CheckoutWindow extends ScrollPane {
         PopularDestinationsController.getOverlaySP().getChildren().add(welcomeAP);
 
         return welcomeAP;
+    }
+
+    private void resetPaymentWebView() {
+        Platform.runLater(() -> {
+            WebEngine engine = paymentWebView.getEngine();
+            engine.loadContent("");               // очищаем содержимое
+            engineIsEmpty = true;
+            // удаляем временный слушатель загрузки, если он есть
+            if (loadListener != null) {
+                engine.getLoadWorker().stateProperty().removeListener(loadListener);
+                loadListener = null;
+            }
+            // отменяем запланированный сброс
+            if (resetPaymentTask != null && !resetPaymentTask.isDone()) {
+                resetPaymentTask.cancel(false);
+            }
+        });
     }
 }
