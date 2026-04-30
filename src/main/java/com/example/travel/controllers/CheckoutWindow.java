@@ -103,7 +103,7 @@ public class CheckoutWindow extends ScrollPane {
 
     private String enteredEmail, enteredPhone;
 
-    private enum InputControlContext {
+    enum InputControlContext {
         FIRST_NAME_OR_NAME,
         BIRTHDAY,
         PASSPORT,
@@ -123,16 +123,6 @@ public class CheckoutWindow extends ScrollPane {
         parentVB.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty().subtract(10));
 
         setContent(parentVB);
-        setFitToWidth(true);
-        setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
-        setHbarPolicy(ScrollBarPolicy.NEVER);
-        getStyleClass().add("scroll-pane");
-        //new HelpFullClass().scrollPaneAnimation(this);
-
-        prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
-        prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
-
-        overSP.getChildren().add(this);
 
         HBox buttonHB = new HBox(10);
         buttonHB.setAlignment(Pos.CENTER_LEFT);
@@ -1599,11 +1589,11 @@ public class CheckoutWindow extends ScrollPane {
         }
     }
 
-    private static boolean isAllowed(char c) {
+    static boolean isAllowed(char c) {
         return Character.isLetter(c) && Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CYRILLIC || c == ' ' || c == '-';
     }
 
-    private static TextFormatter.Change validateAndCapitalize(TextFormatter.Change change, String oldText
+    static TextFormatter.Change validateAndCapitalize(TextFormatter.Change change, String oldText
             , String newTextFull, TextInputControl textInputControl) {
         Label hintLB = ((Label) textInputControl.getUserData());
 

@@ -657,7 +657,7 @@ public class HotelWindow extends ScrollPane {
 
         webEngine.load("http://localhost:8080/map.html");
 
-        // После успешной загрузки вызываем initMap
+        // После успешной загрузки вызываем initMa
         webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
                 String cords = String.format("%.6f", selectedHotel.getLatitude()).replace(",", ".")

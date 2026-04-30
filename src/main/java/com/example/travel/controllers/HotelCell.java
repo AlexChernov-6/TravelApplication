@@ -84,9 +84,6 @@ public class HotelCell extends ListCell<Hotel> {
     protected void updateItem(Hotel hotel, boolean empty) {
         super.updateItem(hotel, empty);
 
-        setText(null);
-        setGraphic(null);
-
         if (empty || hotel == null) {
             if (currentHotel != null) {
                 currentHotel.currentImageIndexProperty().removeListener(imageIndexListener);

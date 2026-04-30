@@ -146,11 +146,22 @@ public class PopularDestinationsController {
         CustomButton ordersBtn = new CustomButton(
                 new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/order.png")))
                 , "Заказы");
-        ordersBtn.setPrefWidth(50);
-        ordersBtn.setMaxWidth(50);
+        ordersBtn.setPrefWidth(60);
+        ordersBtn.setMaxWidth(60);
         ordersBtn.setPrefHeight(35);
         AnchorPane.setTopAnchor(ordersBtn, 25.0);
         AnchorPane.setRightAnchor(ordersBtn, 70.0);
+        ordersBtn.setOnAction(e -> {
+            if(new ConfigManager().getUserId() == 0) {
+                if (registrationWindow == null)
+                    registrationWindow = new RegistrationWindow();
+                else
+                    registrationWindow.show();
+            } else {
+                PersonalAccountWindow personalAccountWindow =
+                        new PersonalAccountWindow(PersonalAccountWindow.ContextStartPersonalAccount.ORDERS);
+            }
+        });
 
         profileBtn = new CustomButton(
                 new Image(Objects.requireNonNull(TravelApplication.class.getResourceAsStream("/images/profile.png")))
@@ -161,10 +172,15 @@ public class PopularDestinationsController {
         AnchorPane.setTopAnchor(profileBtn, 25.0);
         AnchorPane.setRightAnchor(profileBtn, 10.0);
         profileBtn.setOnAction(e -> {
-            if (registrationWindow == null)
-                registrationWindow = new RegistrationWindow();
-            else
-                registrationWindow.show();
+            if(new ConfigManager().getUserId() == 0) {
+                if (registrationWindow == null)
+                    registrationWindow = new RegistrationWindow();
+                else
+                    registrationWindow.show();
+            } else {
+                PersonalAccountWindow personalAccountWindow =
+                        new PersonalAccountWindow(PersonalAccountWindow.ContextStartPersonalAccount.PROFILE);
+            }
         });
 
         AnchorPane headerAP = new AnchorPane();

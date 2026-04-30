@@ -334,7 +334,17 @@ public class RoomCard extends VBox {
         selectBtn.getStyleClass().add("select-button");
         selectBtn.setPrefWidth(Double.MAX_VALUE);
         selectBtn.setOnAction(e -> {
-            new CheckoutWindow(room);
+            CheckoutWindow checkoutWindow = new CheckoutWindow(room);
+            checkoutWindow.setFitToWidth(true);
+            checkoutWindow.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            checkoutWindow.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            checkoutWindow.getStyleClass().add("scroll-pane");
+            new HelpFullClass().scrollPaneAnimation(checkoutWindow);
+
+            checkoutWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
+            checkoutWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
+
+            PopularDestinationsController.getOverlaySP().getChildren().add(checkoutWindow);
         });
 
         selectVB.getChildren().add(selectBtn);
@@ -742,7 +752,17 @@ public class RoomCard extends VBox {
         toBook.getStyleClass().add("show-result-button");
         toBook.prefHeightProperty().bind(bottomHB.heightProperty().subtract(40));
         toBook.setOnAction(e -> {
-            new CheckoutWindow(room);
+            CheckoutWindow checkoutWindow = new CheckoutWindow(room);
+            checkoutWindow.setFitToWidth(true);
+            checkoutWindow.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            checkoutWindow.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            checkoutWindow.getStyleClass().add("scroll-pane");
+            new HelpFullClass().scrollPaneAnimation(checkoutWindow);
+
+            checkoutWindow.prefWidthProperty().bind(PopularDestinationsController.getOverlaySP().widthProperty());
+            checkoutWindow.prefHeightProperty().bind(PopularDestinationsController.getOverlaySP().heightProperty());
+
+            PopularDestinationsController.getOverlaySP().getChildren().add(checkoutWindow);
         });
 
         bottomHB.getChildren().add(toBook);

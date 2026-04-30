@@ -30,6 +30,7 @@ import javafx.util.Duration;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -764,7 +765,9 @@ public class RegistrationWindow extends AnchorPane {
             String newPatronymicName = ((TextField) patronymicTF.getChildren().stream().filter(child -> child instanceof TextField)
                     .toList().getFirst()).getText();
 
-            LocalDate newDate = checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
+            String newDate = null;
+            if(checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB) != null)
+                newDate = checkDate(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 
             if(newName != null && !newName.isEmpty())
                 updatebleUser.setUserSecondName(newName);
@@ -775,8 +778,8 @@ public class RegistrationWindow extends AnchorPane {
             if(newPatronymicName != null && !newPatronymicName.isEmpty())
                 updatebleUser.setUserSurname(newPatronymicName);
 
-            if(newDate != null)
-                updatebleUser.setUserBirthday(newDate.toString());
+            if(newDate != null && !newDate.isEmpty())
+                updatebleUser.setUserBirthday(newDate);
 
             userService.updateRow(updatebleUser);
 
