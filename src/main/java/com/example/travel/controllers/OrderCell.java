@@ -58,7 +58,7 @@ public class OrderCell extends ListCell<Order> {
         generalHB.getChildren().add(datesLB);
 
         HBox discountPriceHB = new HBox(2);
-        discountPriceHB.setPrefWidth(100);
+        discountPriceHB.setPrefWidth(150);
         discountPriceHB.setAlignment(Pos.CENTER_RIGHT);
         generalHB.getChildren().add(discountPriceHB);
 

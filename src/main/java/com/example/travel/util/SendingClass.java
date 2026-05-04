@@ -81,10 +81,10 @@ public class SendingClass {
 
 
     private static boolean ConfirmationEmail(String recipientEmail) {
-        try {
+        try {/*Kv9-m9Z-L45-n5F*/
             // Создаем сообщение
             Message message = new MimeMessage(SESSION);
-            message.setFrom(new InternetAddress(EMAIL_ADDRESS, "Speech"));
+            message.setFrom(new InternetAddress(EMAIL_ADDRESS, "Travel"));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
             message.setSubject("Код подтверждения регистрации");
             String code = generateVerificationCode();

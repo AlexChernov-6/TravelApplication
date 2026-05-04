@@ -211,7 +211,7 @@ public class RegistrationWindow extends AnchorPane {
                 startCountdownIfNeeded(60);
 
                 //Поменять на реальную отправку
-                new Thread(() -> SendingClass.testSendPostalDelivery(mail)).start();
+                new Thread(() -> SendingClass.sendPostalDelivery(mail)).start();
             }
         });
 
@@ -323,7 +323,7 @@ public class RegistrationWindow extends AnchorPane {
                 startCountdownIfNeeded(60);
 
                 //Поменять на реальную отправку
-                new Thread(() -> SendingClass.testSendPostalDelivery(boldEmail.getText())).start();
+                new Thread(() -> SendingClass.sendPostalDelivery(boldEmail.getText())).start();
             }
         });
 

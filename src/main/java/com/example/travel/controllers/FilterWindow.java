@@ -22,6 +22,7 @@ import org.controlsfx.control.RangeSlider;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.example.travel.controllers.PopularDestinationsController.updatePredicateFilteredHotels;
 
@@ -53,6 +54,8 @@ public class FilterWindow extends AnchorPane {
     private CustomRadioButton anyRating;
 
     private List<CustomCheckButton> allCheckButtons = new ArrayList<>();
+
+    private Label filtersLB;
 
     public FilterWindow() {
         this.overlaySP = PopularDestinationsController.getOverlaySP();
@@ -111,7 +114,7 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void createHeader() {
-        Label filtersLB = new Label("Фильтры");
+        filtersLB = new Label("Фильтры");
         filtersLB.getStyleClass().add("filters-label");
         filtersLB.setPrefHeight(40);
         AnchorPane.setTopAnchor(filtersLB, 5.0);
@@ -528,16 +531,63 @@ public class FilterWindow extends AnchorPane {
     }
 
     private void filteredData() {
-        Predicate<Hotel> hotelPredicate = hotel -> checkPrice(hotel) && checkStar(hotel)
-                && checkRat(hotel) && checkCancellationAndPaymentMethod(hotel)
-                && checkHotelFeature(hotel) && checkRoomFeature(hotel);
+        Predicate<Hotel> hotelPredicate = hotel ->
+                checkStar(hotel) && checkRat(hotel) && checkHotelFeature(hotel)
+                        && hasMatchingRoom(hotel);
 
         PopularDestinationsController.filteres.put("FilterWindow", hotelPredicate);
         updatePredicateFilteredHotels();
     }
 
-    private boolean checkPrice(Hotel hotel) {
-        return new RoomService().countRoomByHotelId(hotel.getIdHotel(), fromPrice, beforePrice) != 0;
+    private boolean hasMatchingRoom(Hotel hotel) {
+        RoomService roomService = new RoomService();
+        List<Room> rooms = roomService.getAllRowByHotelId(hotel.getIdHotel());
+
+        for (Room room : rooms) {
+            if (room.getRoomPrice() < fromPrice || room.getRoomPrice() > beforePrice)
+                continue;
+
+            if (room.getRoomSleepingPlaces() < NumberOfGuestsController.totalStatic)
+                continue;
+
+            if (!isPaymentMethodSelected(room.getPaymentMethod()))
+                continue;
+
+            if (!isCancellationPolicySelected(room.getRefundPolicy()))
+                continue;
+
+            if (!roomContainsAllSelectedFeatures(room))
+                continue;
+
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isPaymentMethodSelected(PaymentMethod paymentMethod) {
+        if (mapPaymentMethods.isEmpty()) return true;
+        if (mapPaymentMethods.values().stream().filter(pM -> pM).toList().size() == 0) return  true;
+        Boolean selected = mapPaymentMethods.get(paymentMethod);
+        return selected != null && selected;
+    }
+
+    private boolean isCancellationPolicySelected(RefundPolicy cancellationPolicy) {
+        if (mapCancellation.isEmpty()) return true;
+        if (mapCancellation.values().stream().filter(mC -> mC).toList().size() == 0) return  true;
+        Boolean selected = mapCancellation.get(cancellationPolicy);
+        return selected != null && selected;
+    }
+
+    private boolean roomContainsAllSelectedFeatures(Room room) {
+        if (roomFeatures.isEmpty()) return true;
+
+        RoomFeatureRelationService service = new RoomFeatureRelationService();
+        Set<String> roomFeatureNames = service.getAllRoomFeatureByRoomId(room.getIdRooms())
+                .stream()
+                .map(RoomFeature::getFeatureName)
+                .collect(Collectors.toSet());
+
+        return roomFeatureNames.containsAll(roomFeatures);
     }
 
     private boolean checkStar(Hotel hotel) {
@@ -555,28 +605,6 @@ public class FilterWindow extends AnchorPane {
         return hotel.getHotelRating() >= selectedRat;
     }
 
-    private boolean checkCancellationAndPaymentMethod(Hotel hotel) {
-        RoomService roomService = new RoomService();
-        int total = NumberOfGuestsController.totalStatic;
-        if (mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty()
-                && mapCancellation.values().stream().filter(b -> b).toList().isEmpty())
-            return true;
-        else if (mapPaymentMethods.values().stream().filter(b -> b).toList().isEmpty()) {
-            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
-                    .filter(r -> mapCancellation.get(r.getRefundPolicy()) != null
-                            && mapCancellation.get(r.getRefundPolicy()) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
-        } else if (mapCancellation.values().stream().filter(b -> b).toList().isEmpty()) {
-            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
-                    .filter(r -> mapPaymentMethods.get(r.getPaymentMethod()) != null
-                            && mapPaymentMethods.get(r.getPaymentMethod()) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
-        } else {
-            return !roomService.getAllRowByHotelId(hotel.getIdHotel()).stream()
-                    .filter(r -> (mapPaymentMethods.get(r.getPaymentMethod()) != null
-                            && mapPaymentMethods.get(r.getPaymentMethod())) && (mapCancellation.get(r.getRefundPolicy()) != null
-                            && mapCancellation.get(r.getRefundPolicy())) && r.getRoomSleepingPlaces() >= total).toList().isEmpty();
-        }
-    }
-
     private boolean checkHotelFeature(Hotel hotel) {
         if(hotelFeatures.isEmpty())
             return true;
@@ -590,49 +618,35 @@ public class FilterWindow extends AnchorPane {
         return result.size() == hotelFeatures.size();
     }
 
-    private boolean checkRoomFeature(Hotel hotel) {
-        if(roomFeatures.isEmpty())
-            return  true;
-
-        RoomFeatureRelationService service = new RoomFeatureRelationService();
-        List<RoomFeature> allRoomFeatureByHotelId = service.getAllRoomFeatureByHotelId(hotel.getIdHotel());
-
-        List<RoomFeature> result = allRoomFeatureByHotelId.stream()
-                .filter(roomFeature -> roomFeatures.contains(roomFeature.getFeatureName())).toList();
-
-        return result.size() == roomFeatures.size();
-    }
-
     public List<Integer> getCountStartList() {
         return countStartList;
     }
 
     private void resetAllState() {
         fromPriceTF.setText(String.format("%d", 0));
+        fromPriceTF.requestFocus();
         beforePriceTF.setText(String.format("%d", maxPriceDirection));
+        beforePriceTF.requestFocus();
 
-        for(Node node : countStarsVB.getChildren()) {
+        filtersLB.requestFocus();
+
+        for(Node node : countStarsVB.getChildren())
             if(node instanceof CountStarButton)
                 ((CountStarButton) node).removeSelected();
-        }
 
         anyRating.fire();
 
-        for(Map.Entry<RefundPolicy, Boolean> entry : mapCancellation.entrySet()) {
+        for(Map.Entry<RefundPolicy, Boolean> entry : mapCancellation.entrySet())
             if(entry.getValue())
                 mapModelButtons.get(entry.getKey()).fire();
-        }
 
-        for(Map.Entry<PaymentMethod, Boolean> entry : mapPaymentMethods.entrySet()) {
+        for(Map.Entry<PaymentMethod, Boolean> entry : mapPaymentMethods.entrySet())
             if(entry.getValue())
                 mapModelButtons.get(entry.getKey()).fire();
-        }
 
-        for (CustomCheckButton btn : allCheckButtons) {
-            if (btn.isSelected()) {
+        for (CustomCheckButton btn : allCheckButtons)
+            if (btn.isSelected())
                 btn.fire();
-            }
-        }
 
         filteredData();
         hide();

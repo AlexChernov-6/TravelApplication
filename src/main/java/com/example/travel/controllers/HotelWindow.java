@@ -140,7 +140,7 @@ public class HotelWindow extends ScrollPane {
                         && (room.getRoomPrice() >= (FilterWindow.fromPrice != null ? FilterWindow.fromPrice : 0)
                         && room.getRoomPrice() <= (FilterWindow.beforePrice != null ? FilterWindow.beforePrice : Math.round(new DirectionService()
                         .getMaxRoomPriceByDirectionId(oldPressedDirection.getIdDirection()))))
-                        && checkPaymentMethod(room) && checkCancellation(room) /*&& checkRoomFeature(room)*/)
+                        && checkPaymentMethod(room) && checkCancellation(room) && checkRoomFeature(room))
                 .sorted((r1, r2) -> r1.getRoomSleepingPlaces() - r2.getRoomSleepingPlaces())
                 .toList();
 

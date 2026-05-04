@@ -63,7 +63,8 @@ public class CheckoutWindow extends ScrollPane {
     private Room room;
 
     private Pane shadowPane;
-    private Button closeBtn, closeBtnPayment;
+    private VBox buttonsVB;
+    private Button closeBtn;
     private WebView webView, paymentWebView;
 
     private ScrollPane infoRoomScrollPane;
@@ -1466,7 +1467,7 @@ public class CheckoutWindow extends ScrollPane {
                     if (val) {
                         lb1.setVisible(true);
                         lb1.setManaged(true);
-                        if (hintLB1.getText().isEmpty())
+                        if (hintLB1.getText() == null || hintLB1.getText().isEmpty())
                             hintLB1.setText(validateEmail(emailTF.getText()));
                     } else {
                         if (emailTF.getText() == null || emailTF.getText().isEmpty()) {
@@ -1551,8 +1552,6 @@ public class CheckoutWindow extends ScrollPane {
                     if (val) {
                         lb2.setVisible(true);
                         lb2.setManaged(true);
-                        if(!phoneTF.getText().matches("^\\+7([0-9]{3})[0-9]{3}-[0-9]{2}-[0-9]{2}$") && hintLB2.getText().isEmpty())
-                            hintLB2.setText("Некорректный номер телефона");
                     } else {
                         if (phoneTF.getText() == null || phoneTF.getText().isEmpty()) {
                             lb2.setVisible(false);
@@ -1711,12 +1710,21 @@ public class CheckoutWindow extends ScrollPane {
             overSP.getChildren().add(shadowPane);
         }
 
-        closeBtnPayment = new Button();
-        closeBtnPayment.setVisible(false);
+        buttonsVB = new VBox(10);
+        buttonsVB.setVisible(false);
+        buttonsVB.setMaxHeight(30 + 10 + 30);
+        buttonsVB.setPrefHeight(30 + 10 + 30);
+        buttonsVB.setMinHeight(30 + 10 + 30);
+        buttonsVB.setMaxWidth(30);
+        buttonsVB.setPrefWidth(30);
+        buttonsVB.setMinWidth(30);
+        StackPane.setAlignment(buttonsVB, Pos.TOP_RIGHT);
+        StackPane.setMargin(buttonsVB, new Insets(20, 20, 0, 0));
+        overSP.getChildren().add(buttonsVB);
+
+        Button closeBtnPayment = new Button();
         closeBtnPayment.setPrefHeight(30);
         closeBtnPayment.setPrefWidth(30);
-        StackPane.setAlignment(closeBtnPayment, Pos.TOP_RIGHT);
-        StackPane.setMargin(closeBtnPayment, new Insets(20, 20, 0, 0));
         closeBtnPayment.getStyleClass().add("close-button");
         closeBtnPayment.setOnAction(event -> {
             hidePaymentWin(false);
@@ -1730,7 +1738,25 @@ public class CheckoutWindow extends ScrollPane {
 
         closeBtnPayment.setGraphic(closeImg);
 
-        overSP.getChildren().add(closeBtnPayment);
+        buttonsVB.getChildren().add(closeBtnPayment);
+
+        Button refreshBtnPayment = new Button();
+        refreshBtnPayment.setPrefHeight(30);
+        refreshBtnPayment.setPrefWidth(30);
+        refreshBtnPayment.getStyleClass().add("close-button");
+        refreshBtnPayment.setOnAction(event -> {
+            resetPaymentWebView();
+            reloadPaymentContent(orderCost, "Путёвка в отель \"" + room.getHotel().getHotelName() + "\"");
+        });
+
+        ImageView refreshImg = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/refresh.png"))));
+        refreshImg.setFitHeight(20);
+        refreshImg.setFitWidth(20);
+
+        refreshBtnPayment.setGraphic(refreshImg);
+
+        buttonsVB.getChildren().add(refreshBtnPayment);
 
         paymentWebView = new WebView();
         paymentWebView.setVisible(false);
@@ -1764,7 +1790,9 @@ public class CheckoutWindow extends ScrollPane {
             if (!paymentWebView.isVisible()) return;
 
             Point2D pointInWindow = paymentWebView.screenToLocal(event.getScreenX(), event.getScreenY());
-            if (pointInWindow != null && paymentWebView.contains(pointInWindow))
+            Point2D pointInWindow2 = refreshBtnPayment.screenToLocal(event.getScreenX(), event.getScreenY());
+            if ((pointInWindow != null && paymentWebView.contains(pointInWindow)
+                    || (pointInWindow2 != null && refreshBtnPayment.contains(pointInWindow2))))
                 return;
             else hidePaymentWin(false);
         });
@@ -1812,7 +1840,7 @@ public class CheckoutWindow extends ScrollPane {
 
     private void showPaymentWin(double amount, String description) {
         shadowPane.setVisible(true);
-        closeBtnPayment.setVisible(true);
+        buttonsVB.setVisible(true);
         paymentWebView.setVisible(true);
 
         if (engineIsEmpty) {
@@ -1911,7 +1939,7 @@ public class CheckoutWindow extends ScrollPane {
 
     private void hidePaymentWin(boolean showShadowPane) {
         shadowPane.setVisible(showShadowPane);
-        closeBtnPayment.setVisible(false);
+        buttonsVB.setVisible(false);
         paymentWebView.setVisible(false);
     }
 
